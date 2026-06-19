@@ -617,7 +617,42 @@ button {
    RESPONSIVE
    =========================================================== */
 
-@media (max-width: 1024px) {
+/* Narrow desktop / small laptop: keep the full layout intact, just tighten
+   horizontal rhythm. Sidebar stays as a single right-hand column, feature
+   strip stays 4-across, footer stays 5-across, down to 900px. */
+@media (max-width: 1180px) {
+  .content-inner {
+    gap: 24px;
+  }
+
+  .content-section {
+    padding: 8px 24px 60px;
+  }
+
+  .hero {
+    padding: 56px 24px 40px;
+  }
+
+  .feature-strip {
+    padding: 0 24px 60px;
+  }
+
+  .feature-strip-inner {
+    gap: 18px;
+    padding: 28px;
+  }
+
+  .footer-inner {
+    padding: 56px 24px 36px;
+    gap: 20px;
+  }
+}
+
+/* Tablet: nav links hide; sidebar drops below content as a two-up row;
+   feature strip becomes 2x2; footer becomes 3 columns. This is the first
+   point real horizontal space runs out, well below the page's natural
+   desktop width. */
+@media (max-width: 900px) {
   .nav-links {
     display: none;
   }
