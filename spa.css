@@ -1,3 +1,11 @@
+/* =====================================================================
+   IdeanaX — SPA Styles
+   Handles page transitions, loader, and persistent layout.
+   ===================================================================== */
+
+/* -------------------------------------------------------------------
+   Page Loader
+   ------------------------------------------------------------------- */
 #spa-loader {
   position: fixed;
   inset: 0;
@@ -26,9 +34,17 @@
   animation: spa-spin 0.8s linear infinite;
 }
 
+@keyframes spa-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* -------------------------------------------------------------------
+   Content Transitions
+   ------------------------------------------------------------------- */
 #spa-content {
   opacity: 1;
   transition: opacity 0.2s ease;
+  min-height: calc(100vh - 200px); /* Ensure content area fills viewport */
 }
 
 #spa-content.is-fading-out {
@@ -39,6 +55,65 @@
   opacity: 1;
 }
 
-@keyframes spa-spin {
-  to { transform: rotate(360deg); }
+/* -------------------------------------------------------------------
+   Persistent Layout
+   ------------------------------------------------------------------- */
+
+/* The body acts as the SPA shell */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Main navbar is fixed at top */
+#main-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+/* Main content area grows to fill space */
+#spa-content {
+  flex: 1 0 auto;
+}
+
+/* Main footer stays at bottom */
+#main-footer {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+/* -------------------------------------------------------------------
+   SPA Page Container
+   ------------------------------------------------------------------- */
+.spa-page {
+  width: 100%;
+}
+
+/* -------------------------------------------------------------------
+   Navigation Active States
+   ------------------------------------------------------------------- */
+.nav-links a.active {
+  color: var(--accent, #a78bfa);
+  font-weight: 600;
+}
+
+.footer a.footer-active {
+  color: var(--accent, #a78bfa);
+}
+
+/* -------------------------------------------------------------------
+   Smooth scrolling
+   ------------------------------------------------------------------- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* -------------------------------------------------------------------
+   Prevent layout shift during transitions
+   ------------------------------------------------------------------- */
+#spa-content {
+  contain: layout style;
 }

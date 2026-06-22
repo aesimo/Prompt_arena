@@ -1,6 +1,7 @@
 /* =====================================================================
-   IdeanaX — SPA Router
-   Handles client-side navigation with smooth transitions.
+   IdeanaX — True SPA Router
+   Handles client-side navigation with persistent header/footer.
+   Only the main content area (#spa-content) changes between routes.
    ===================================================================== */
 
 (function () {
@@ -24,17 +25,61 @@
 
   // Page metadata for each route
   const PAGE_META = {
-    home: { title: 'IdeanaX — Discover AI Prompts & Creator Resources', css: 'styles.css', js: 'script.js' },
-    prompts: { title: 'IdeanaX — AI Prompts Directory', css: 'prompts.css', js: 'prompts.js' },
-    tools: { title: 'IdeanaX — AI Tools Directory', css: 'tools.css', js: 'tools.js' },
-    assets: { title: 'IdeanaX — Digital Assets Marketplace', css: 'assets.css', js: 'assets.js' },
-    blog: { title: 'IdeanaX — Blog & Guides', css: 'blog.css', js: 'blog.js' },
-    about: { title: 'About Us — IdeanaX', css: 'about.css', js: 'about.js' },
-    contact: { title: 'Contact Us — IdeanaX', css: 'contact.css', js: 'contact.js' },
-    faq: { title: 'FAQ — IdeanaX', css: 'faq.css', js: 'faq.js' },
-    privacy: { title: 'Privacy Policy — IdeanaX', css: 'privacy.css', js: 'privacy.js' },
-    terms: { title: 'Terms of Service — IdeanaX', css: 'terms.css', js: 'terms.js' },
-    disclaimer: { title: 'Disclaimer — IdeanaX', css: 'disclaimer.css', js: 'disclaimer.js' }
+    home: { 
+      title: 'IdeanaX — Discover AI Prompts & Creator Resources', 
+      css: 'styles.css', 
+      js: 'script.js'
+    },
+    prompts: { 
+      title: 'IdeanaX — AI Prompts Directory', 
+      css: 'prompts.css', 
+      js: 'prompts.js'
+    },
+    tools: { 
+      title: 'IdeanaX — AI Tools Directory', 
+      css: 'tools.css', 
+      js: 'tools.js'
+    },
+    assets: { 
+      title: 'IdeanaX — Digital Assets Marketplace', 
+      css: 'assets.css', 
+      js: 'assets.js'
+    },
+    blog: { 
+      title: 'IdeanaX — Blog & Guides', 
+      css: 'blog.css', 
+      js: 'blog.js'
+    },
+    about: { 
+      title: 'About Us — IdeanaX', 
+      css: 'about.css', 
+      js: 'about.js'
+    },
+    contact: { 
+      title: 'Contact Us — IdeanaX', 
+      css: 'contact.css', 
+      js: 'contact.js'
+    },
+    faq: { 
+      title: 'FAQ — IdeanaX', 
+      css: 'faq.css', 
+      js: 'faq.js'
+    },
+    privacy: { 
+      title: 'Privacy Policy — IdeanaX', 
+      css: 'privacy.css', 
+      js: 'privacy.js'
+    },
+    terms: { 
+      title: 'Terms of Service — IdeanaX', 
+      css: 'terms.css', 
+      js: 'terms.js'
+    },
+    disclaimer: { 
+      title: 'Disclaimer — IdeanaX', 
+      css: 'disclaimer.css', 
+      js: 'disclaimer.js'
+    }
   };
 
   class Router {
@@ -46,6 +91,8 @@
       this.cache = new Map();
       this.spaContent = document.getElementById('spa-content');
       this.loader = document.getElementById('spa-loader');
+      this.mainNavbar = document.getElementById('main-navbar');
+      this.mainFooter = document.getElementById('main-footer');
     }
 
     init() {
@@ -60,6 +107,7 @@
 
       // Initialize current page
       this.initializePage(routeName);
+      this.updateActiveNav(routeName);
 
       console.log('[SPA Router] Initialized on route:', routeName);
     }
@@ -69,18 +117,17 @@
       if (path === '/' || path === '') return 'home';
       
       // Clean up path and lookup route
-      const cleanPath = path.replace(/^\//, '');
-      return ROUTES['/' + cleanPath] || ROUTES[path] || 'home';
+      return ROUTES[path] || ROUTES['/' + path.replace(/^\//, '')] || 'home';
     }
 
     getPathForRoute(routeName) {
       // Reverse lookup
       for (const [path, name] of Object.entries(ROUTES)) {
         if (name === routeName) {
-          return path === '/' ? '/index.html' : path;
+          return path;
         }
       }
-      return '/index.html';
+      return '/';
     }
 
     setupLinkInterception() {
@@ -90,11 +137,22 @@
 
         const href = link.getAttribute('href');
         
+        // Skip if marked with data-nav (we handle these specially)
+        if (link.hasAttribute('data-nav')) {
+          e.preventDefault();
+          this.navigate(href);
+          return;
+        }
+
         // Skip external links, anchors, and special links
         if (this.shouldIgnoreLink(href, link)) return;
 
-        e.preventDefault();
-        this.navigate(href);
+        // Check if it's a known route
+        const routeName = this.getRouteName(href);
+        if (routeName && routeName !== this.getRouteName(window.location.pathname)) {
+          e.preventDefault();
+          this.navigate(href);
+        }
       });
     }
 
@@ -163,13 +221,13 @@
         if (this.cache.has(targetPath)) {
           pageContent = this.cache.get(targetPath);
         } else {
-          pageContent = await this.fetchPage(href);
+          pageContent = await this.fetchPage(targetPath);
           // Cache the content
           this.cache.set(targetPath, pageContent);
         }
 
-        // Parse and extract content
-        const content = this.extractContent(pageContent);
+        // Parse and extract content (without navbar/footer)
+        const content = this.extractContent(pageContent, routeName);
         
         // Update URL
         if (pushState) {
@@ -179,13 +237,13 @@
         // Cleanup previous page
         this.cleanupPage();
 
-        // Update DOM
+        // Update DOM content
         this.updateContent(content, routeName);
 
         // Load new assets
         await this.loadRouteAssets(routeName);
 
-        // Update navigation states
+        // Update navigation states on persistent navbar/footer
         this.updateActiveNav(routeName);
 
         // Update meta tags
@@ -214,59 +272,113 @@
       }
     }
 
-    async fetchPage(href) {
-      const url = href.startsWith('/') ? href : '/' + href;
-      const response = await fetch(url, {
+    async fetchPage(url) {
+      // Ensure URL starts with /
+      const fetchUrl = url.startsWith('/') ? url : '/' + url;
+      
+      const response = await fetch(fetchUrl, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch ${url}: ${response.status}`);
+        throw new Error(`Failed to fetch ${fetchUrl}: ${response.status}`);
       }
 
       return await response.text();
     }
 
-    extractContent(html) {
+    extractContent(html, routeName) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
 
       // Try to find spa-page content first
       const spaPage = doc.querySelector('.spa-page');
       if (spaPage) {
+        // Extract content from inside spa-page, excluding navbar and footer
+        let mainContent = '';
+        // Convert HTMLCollection to Array for proper iteration
+        const children = Array.from(spaPage.children);
+        
+        for (let child of children) {
+          // Skip navbar/header elements
+          if (child.classList.contains('navbar') || 
+              child.tagName === 'HEADER' ||
+              child.classList.contains('nav-inner')) {
+            continue;
+          }
+          
+          // Skip footer elements
+          if (child.classList.contains('footer') || 
+              child.tagName === 'FOOTER') {
+            continue;
+          }
+          
+          mainContent += child.outerHTML;
+        }
+        
         return {
-          content: spaPage.outerHTML,
+          content: mainContent,
           title: doc.title,
           meta: doc.querySelector('meta[name="description"]')?.content || ''
         };
       }
 
-      // Otherwise, extract navbar, body content, and footer
-      const navbar = doc.querySelector('.navbar')?.outerHTML || '';
-      const footer = doc.querySelector('.footer')?.outerHTML || '';
-      
-      // Get body content between navbar and footer
+      // Fallback: extract content between navbar and footer from body
       const body = doc.body;
       let mainContent = '';
+      let collecting = false;
       
-      // Find all direct children that aren't navbar or footer
-      const children = body.children;
+      const children = Array.from(body.children);
       for (let child of children) {
-        if (!child.classList.contains('navbar') && 
-            !child.classList.contains('footer') &&
-            child.tagName !== 'SCRIPT') {
+        // Skip scripts, loader, etc.
+        if (child.tagName === 'SCRIPT') continue;
+        if (child.id === 'spa-loader') continue;
+        
+        // Start collecting after navbar
+        if (child.classList.contains('navbar') || child.id === 'main-navbar') {
+          collecting = true;
+          continue;
+        }
+        
+        // Stop collecting at footer
+        if (child.classList.contains('footer') || child.id === 'main-footer') {
+          break;
+        }
+        
+        // Handle spa-content wrapper
+        if (child.id === 'spa-content') {
+          const innerPage = child.querySelector('.spa-page');
+          if (innerPage) {
+            // Extract from inner spa-page, excluding navbar/footer
+            const innerChildren = Array.from(innerPage.children);
+            for (let innerChild of innerChildren) {
+              if (innerChild.classList.contains('navbar') || 
+                  innerChild.classList.contains('footer') ||
+                  innerChild.tagName === 'HEADER' ||
+                  innerChild.tagName === 'FOOTER') {
+                continue;
+              }
+              mainContent += innerChild.outerHTML;
+            }
+          } else {
+            mainContent = child.innerHTML;
+          }
+          break;
+        }
+        
+        if (collecting) {
           mainContent += child.outerHTML;
         }
       }
 
       return {
-        content: navbar + mainContent + footer,
+        content: mainContent,
         title: doc.title,
         meta: doc.querySelector('meta[name="description"]')?.content || ''
       };
     }
 
-    updateContent(content, routeName) {
+    updateContent(contentObj, routeName) {
       if (!this.spaContent) {
         console.error('[SPA Router] spa-content element not found');
         return;
@@ -278,7 +390,7 @@
       pageWrapper.className = 'spa-page';
       pageWrapper.dataset.page = routeName;
       pageWrapper.dataset.title = meta.title;
-      pageWrapper.innerHTML = content.content;
+      pageWrapper.innerHTML = contentObj.content;
 
       // Clear and update content
       this.spaContent.innerHTML = '';
@@ -290,7 +402,7 @@
       if (!meta) return;
 
       // Load CSS
-      if (meta.css && meta.css !== 'styles.css') {
+      if (meta.css) {
         await this.loadCSS(meta.css);
         this.currentCSS.push(meta.css);
       }
@@ -314,12 +426,19 @@
         link.rel = 'stylesheet';
         link.href = href;
         link.onload = resolve;
-        link.onerror = reject;
+        link.onerror = () => {
+          // Don't fail on CSS load errors
+          console.warn('[SPA Router] Failed to load CSS:', href);
+          resolve();
+        };
         document.head.appendChild(link);
       });
     }
 
     unloadCSS(href) {
+      // Don't unload styles.css as it's the base stylesheet
+      if (href === 'styles.css') return;
+      
       const link = document.querySelector(`link[href="${href}"]`);
       if (link) {
         link.remove();
@@ -338,7 +457,11 @@
         script.src = src;
         script.async = false;
         script.onload = resolve;
-        script.onerror = reject;
+        script.onerror = () => {
+          // Don't fail on JS load errors (some pages might not have JS)
+          console.warn('[SPA Router] Failed to load JS:', src);
+          resolve();
+        };
         document.body.appendChild(script);
       });
     }
@@ -346,9 +469,7 @@
     cleanupPage() {
       // Unload previous CSS (except styles.css which is shared)
       this.currentCSS.forEach(css => {
-        if (css !== 'styles.css') {
-          this.unloadCSS(css);
-        }
+        this.unloadCSS(css);
       });
       this.currentCSS = [];
 
@@ -362,7 +483,6 @@
       this.currentJS = [];
 
       // Clear any intervals or timeouts from previous page
-      // Note: Individual pages should handle their own cleanup in PageCleanups
       if (window.PageCleanups && window.PageCleanups[this.currentRoute]) {
         try {
           window.PageCleanups[this.currentRoute]();
@@ -404,36 +524,44 @@
 
     updateActiveNav(routeName) {
       const pathMap = {
-        'home': 'index.html',
-        'prompts': 'prompts.html',
-        'tools': 'tools.html',
-        'assets': 'assets.html',
-        'blog': 'blog.html',
-        'about': 'about.html',
-        'contact': 'contact.html',
-        'faq': 'faq.html',
-        'privacy': 'privacy.html',
-        'terms': 'terms.html',
-        'disclaimer': 'disclaimer.html'
+        'home': '/',
+        'prompts': '/prompts.html',
+        'tools': '/tools.html',
+        'assets': '/assets.html',
+        'blog': '/blog.html',
+        'about': '/about.html',
+        'contact': '/contact.html',
+        'faq': '/faq.html',
+        'privacy': '/privacy.html',
+        'terms': '/terms.html',
+        'disclaimer': '/disclaimer.html'
       };
 
       const activePath = pathMap[routeName];
 
       // Update navbar links
-      document.querySelectorAll('.nav-links a').forEach(link => {
-        link.classList.remove('active');
-        if (activePath && link.getAttribute('href') === activePath) {
-          link.classList.add('active');
-        }
-      });
+      if (this.mainNavbar) {
+        this.mainNavbar.querySelectorAll('.nav-links a').forEach(link => {
+          link.classList.remove('active');
+          const linkHref = link.getAttribute('href');
+          if (linkHref === activePath || 
+              (routeName === 'home' && (linkHref === '/' || linkHref === '/index.html'))) {
+            link.classList.add('active');
+          }
+        });
+      }
 
       // Update footer links
-      document.querySelectorAll('.footer a').forEach(link => {
-        link.classList.remove('footer-active');
-        if (activePath && link.getAttribute('href') === activePath) {
-          link.classList.add('footer-active');
-        }
-      });
+      if (this.mainFooter) {
+        this.mainFooter.querySelectorAll('a').forEach(link => {
+          link.classList.remove('footer-active');
+          const linkHref = link.getAttribute('href');
+          if (linkHref === activePath || 
+              (routeName === 'home' && (linkHref === '/' || linkHref === '/index.html'))) {
+            link.classList.add('footer-active');
+          }
+        });
+      }
     }
 
     updateMeta(routeName) {
