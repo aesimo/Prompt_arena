@@ -105,11 +105,60 @@
       this.setupLinkInterception();
       this.setupPopState();
 
-      // Initialize current page
-      this.initializePage(routeName);
-      this.updateActiveNav(routeName);
+      // Load initial page content
+      this.loadInitialContent(routeName);
 
       console.log('[SPA Router] Initialized on route:', routeName);
+    }
+
+    async loadInitialContent(routeName) {
+      // Fetch content from the page file
+      const targetPath = '/' + this.getFileForRoute(routeName);
+      try {
+        this.showLoader();
+        const pageContent = await this.fetchPage(targetPath);
+        const content = this.extractContent(pageContent, routeName);
+        
+        // Cleanup (if any)
+        this.cleanupPage();
+        
+        // Update DOM content
+        this.updateContent(content, routeName);
+        
+        // Load new assets
+        await this.loadRouteAssets(routeName);
+        
+        // Update navigation states
+        this.updateActiveNav(routeName);
+        this.updateMeta(routeName);
+        
+        // Initialize new page
+        this.initializePage(routeName);
+        
+        this.hideLoader();
+      } catch (error) {
+        console.error('[SPA Router] Failed to load initial content:', error);
+        this.hideLoader();
+        // Show error message in content area
+        this.spaContent.innerHTML = '<div class="spa-page"><div style="padding:4rem;text-align:center;"><h2>Page not found</h2><p>The requested page could not be loaded.</p></div></div>';
+      }
+    }
+
+    getFileForRoute(routeName) {
+      const fileMap = {
+        'home': 'index.html',
+        'prompts': 'prompts.html',
+        'tools': 'tools.html',
+        'assets': 'assets.html',
+        'blog': 'blog.html',
+        'about': 'about.html',
+        'contact': 'contact.html',
+        'faq': 'faq.html',
+        'privacy': 'privacy.html',
+        'terms': 'terms.html',
+        'disclaimer': 'disclaimer.html'
+      };
+      return fileMap[routeName] || 'index.html';
     }
 
     getRouteName(path) {
@@ -299,17 +348,25 @@
         // Convert HTMLCollection to Array for proper iteration
         const children = Array.from(spaPage.children);
         
+        let skipUntilFooter = false;
+        
         for (let child of children) {
-          // Skip navbar/header elements
+          // Skip navbar/header elements (everything until we hit the first non-navbar element)
           if (child.classList.contains('navbar') || 
               child.tagName === 'HEADER' ||
               child.classList.contains('nav-inner')) {
+            skipUntilFooter = false;
             continue;
           }
           
-          // Skip footer elements
+          // Stop at footer and skip everything after
           if (child.classList.contains('footer') || 
               child.tagName === 'FOOTER') {
+            skipUntilFooter = true;
+            continue;
+          }
+          
+          if (skipUntilFooter) {
             continue;
           }
           
@@ -327,6 +384,7 @@
       const body = doc.body;
       let mainContent = '';
       let collecting = false;
+      let skipUntilFooter = false;
       
       const children = Array.from(body.children);
       for (let child of children) {
@@ -337,13 +395,17 @@
         // Start collecting after navbar
         if (child.classList.contains('navbar') || child.id === 'main-navbar') {
           collecting = true;
+          skipUntilFooter = false;
           continue;
         }
         
         // Stop collecting at footer
         if (child.classList.contains('footer') || child.id === 'main-footer') {
+          skipUntilFooter = true;
           break;
         }
+        
+        if (skipUntilFooter) continue;
         
         // Handle spa-content wrapper
         if (child.id === 'spa-content') {
@@ -351,13 +413,16 @@
           if (innerPage) {
             // Extract from inner spa-page, excluding navbar/footer
             const innerChildren = Array.from(innerPage.children);
+            let innerSkipUntilFooter = false;
             for (let innerChild of innerChildren) {
               if (innerChild.classList.contains('navbar') || 
                   innerChild.classList.contains('footer') ||
                   innerChild.tagName === 'HEADER' ||
                   innerChild.tagName === 'FOOTER') {
+                innerSkipUntilFooter = (innerChild.classList.contains('footer') || innerChild.tagName === 'FOOTER');
                 continue;
               }
+              if (innerSkipUntilFooter) continue;
               mainContent += innerChild.outerHTML;
             }
           } else {
