@@ -8,18 +8,31 @@
   'use strict';
 
   // Route configuration mapping URLs to route names
+  // Using relative paths for GitHub Pages subdirectory support
   const ROUTES = {
     '/': 'home',
+    './': 'home',
+    'index.html': 'home',
     '/index.html': 'home',
+    'prompts.html': 'prompts',
     '/prompts.html': 'prompts',
+    'tools.html': 'tools',
     '/tools.html': 'tools',
+    'assets.html': 'assets',
     '/assets.html': 'assets',
+    'blog.html': 'blog',
     '/blog.html': 'blog',
+    'about.html': 'about',
     '/about.html': 'about',
+    'contact.html': 'contact',
     '/contact.html': 'contact',
+    'faq.html': 'faq',
     '/faq.html': 'faq',
+    'privacy.html': 'privacy',
     '/privacy.html': 'privacy',
+    'terms.html': 'terms',
     '/terms.html': 'terms',
+    'disclaimer.html': 'disclaimer',
     '/disclaimer.html': 'disclaimer'
   };
 
@@ -112,29 +125,38 @@
     }
 
     async loadInitialContent(routeName) {
-      // Fetch content from the page file
-      const targetPath = '/' + this.getFileForRoute(routeName);
+      // Home route content is embedded in index.html, skip fetch
+      if (routeName === 'home') {
+        this.currentRoute = routeName;
+        this.updateActiveNav(routeName);
+        this.updateMeta(routeName);
+        this.initializePage(routeName);
+        return;
+      }
+
+      // Fetch content from the page file using relative path
+      const targetPath = this.getFileForRoute(routeName);
       try {
         this.showLoader();
         const pageContent = await this.fetchPage(targetPath);
         const content = this.extractContent(pageContent, routeName);
-        
+
         // Cleanup (if any)
         this.cleanupPage();
-        
+
         // Update DOM content
         this.updateContent(content, routeName);
-        
+
         // Load new assets
         await this.loadRouteAssets(routeName);
-        
+
         // Update navigation states
         this.updateActiveNav(routeName);
         this.updateMeta(routeName);
-        
+
         // Initialize new page
         this.initializePage(routeName);
-        
+
         this.hideLoader();
       } catch (error) {
         console.error('[SPA Router] Failed to load initial content:', error);
@@ -162,21 +184,33 @@
     }
 
     getRouteName(path) {
-      // Handle root path
-      if (path === '/' || path === '') return 'home';
-      
-      // Clean up path and lookup route
-      return ROUTES[path] || ROUTES['/' + path.replace(/^\//, '')] || 'home';
+      // Handle root path and empty path
+      if (path === '/' || path === '' || path === './') return 'home';
+
+      // Remove leading ./ if present
+      const cleanPath = path.replace(/^\.\//, '');
+
+      // Remove leading / if present for lookup
+      const lookupPath = cleanPath.replace(/^\//, '');
+
+      // Try direct lookup, then with leading /, then just the filename
+      return ROUTES[cleanPath] || ROUTES[lookupPath] || ROUTES['/' + lookupPath] || 'home';
     }
 
     getPathForRoute(routeName) {
-      // Reverse lookup
+      // Reverse lookup - prefer relative paths (no leading /)
+      for (const [path, name] of Object.entries(ROUTES)) {
+        if (name === routeName && !path.startsWith('/')) {
+          return path;
+        }
+      }
+      // Fallback to root-relative if no relative found
       for (const [path, name] of Object.entries(ROUTES)) {
         if (name === routeName) {
           return path;
         }
       }
-      return '/';
+      return './';
     }
 
     setupLinkInterception() {
@@ -228,9 +262,11 @@
       window.addEventListener('popstate', (e) => {
         const path = window.location.pathname;
         const routeName = this.getRouteName(path);
-        
+
         if (routeName !== this.currentRoute) {
-          this.loadRoute(path, false);
+          // Use relative path for loadRoute
+          const relativePath = routeName === 'home' ? './' : this.getFileForRoute(routeName);
+          this.loadRoute(relativePath, false);
         }
       });
     }
@@ -239,12 +275,14 @@
       if (this.isNavigating) return;
 
       const currentPath = window.location.pathname;
-      const targetPath = href.startsWith('/') ? href : '/' + href;
-      
+      // Handle relative paths - convert to absolute for comparison
+      const targetPath = href.startsWith('/') ? href : (href.startsWith('./') ? href.substring(1) : '/' + href);
+
       // Don't navigate to same page
-      if (currentPath === targetPath || 
-          (currentPath === '/' && targetPath === '/index.html') ||
-          (currentPath === '/index.html' && targetPath === '/')) {
+      if (currentPath === targetPath ||
+          (currentPath === '/' && (targetPath === '/index.html' || targetPath === 'index.html')) ||
+          (currentPath === '/index.html' && (targetPath === '/' || targetPath === '')) ||
+          (currentPath.endsWith(targetPath))) {
         return;
       }
 
@@ -255,7 +293,8 @@
       if (this.isNavigating) return;
       this.isNavigating = true;
 
-      const targetPath = href.startsWith('/') ? href : '/' + href;
+      // Use relative path directly
+      const targetPath = href.startsWith('/') ? href.replace(/^\//, '') : href.replace(/^\.\//, '');
       const routeName = this.getRouteName(targetPath);
 
       try {
@@ -264,6 +303,43 @@
 
         // Small delay for visual transition
         await this.delay(150);
+
+        // Handle home route specially - content is embedded
+        if (routeName === 'home') {
+          // Cleanup previous page
+          this.cleanupPage();
+
+          // Clear spa-content to show embedded home content
+          this.spaContent.innerHTML = '';
+
+          // Update URL
+          if (pushState) {
+            window.history.pushState({}, '', './');
+          }
+
+          // Update navigation states on persistent navbar/footer
+          this.updateActiveNav(routeName);
+
+          // Update meta tags
+          this.updateMeta(routeName);
+
+          // Initialize new page
+          this.initializePage(routeName);
+
+          // Fade in
+          this.startFadeIn();
+          await this.delay(200);
+          this.hideLoader();
+
+          // Update current route
+          this.currentRoute = routeName;
+
+          // Scroll to top
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+
+          this.isNavigating = false;
+          return;
+        }
 
         // Check cache first
         let pageContent;
@@ -277,8 +353,8 @@
 
         // Parse and extract content (without navbar/footer)
         const content = this.extractContent(pageContent, routeName);
-        
-        // Update URL
+
+        // Update URL - use relative path for GitHub Pages subdirectory support
         if (pushState) {
           window.history.pushState({}, '', targetPath);
         }
@@ -322,9 +398,10 @@
     }
 
     async fetchPage(url) {
-      // Ensure URL starts with /
-      const fetchUrl = url.startsWith('/') ? url : '/' + url;
-      
+      // Use relative path for GitHub Pages subdirectory support
+      // Remove leading / or ./ if present to ensure relative path
+      const fetchUrl = url.replace(/^[\/]/, '').replace(/^\.\//, '');
+
       const response = await fetch(fetchUrl, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
@@ -588,18 +665,19 @@
     }
 
     updateActiveNav(routeName) {
+      // Using relative paths for GitHub Pages subdirectory support
       const pathMap = {
-        'home': '/',
-        'prompts': '/prompts.html',
-        'tools': '/tools.html',
-        'assets': '/assets.html',
-        'blog': '/blog.html',
-        'about': '/about.html',
-        'contact': '/contact.html',
-        'faq': '/faq.html',
-        'privacy': '/privacy.html',
-        'terms': '/terms.html',
-        'disclaimer': '/disclaimer.html'
+        'home': './',
+        'prompts': 'prompts.html',
+        'tools': 'tools.html',
+        'assets': 'assets.html',
+        'blog': 'blog.html',
+        'about': 'about.html',
+        'contact': 'contact.html',
+        'faq': 'faq.html',
+        'privacy': 'privacy.html',
+        'terms': 'terms.html',
+        'disclaimer': 'disclaimer.html'
       };
 
       const activePath = pathMap[routeName];
@@ -609,8 +687,11 @@
         this.mainNavbar.querySelectorAll('.nav-links a').forEach(link => {
           link.classList.remove('active');
           const linkHref = link.getAttribute('href');
-          if (linkHref === activePath || 
-              (routeName === 'home' && (linkHref === '/' || linkHref === '/index.html'))) {
+          // Normalize href for comparison
+          const normalizedHref = linkHref?.replace(/^[\/]/, '').replace(/^\.\//, '');
+          const normalizedActive = activePath?.replace(/^[\/]/, '').replace(/^\.\//, '');
+          if (normalizedHref === normalizedActive ||
+              (routeName === 'home' && (linkHref === '/' || linkHref === './' || linkHref === 'index.html' || linkHref === '/index.html'))) {
             link.classList.add('active');
           }
         });
@@ -621,8 +702,11 @@
         this.mainFooter.querySelectorAll('a').forEach(link => {
           link.classList.remove('footer-active');
           const linkHref = link.getAttribute('href');
-          if (linkHref === activePath || 
-              (routeName === 'home' && (linkHref === '/' || linkHref === '/index.html'))) {
+          // Normalize href for comparison
+          const normalizedHref = linkHref?.replace(/^[\/]/, '').replace(/^\.\//, '');
+          const normalizedActive = activePath?.replace(/^[\/]/, '').replace(/^\.\//, '');
+          if (normalizedHref === normalizedActive ||
+              (routeName === 'home' && (linkHref === '/' || linkHref === './' || linkHref === 'index.html' || linkHref === '/index.html'))) {
             link.classList.add('footer-active');
           }
         });
