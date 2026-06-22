@@ -1,14 +1,22 @@
+/* =====================================================================
+   IdeanaX — SPA Styles
+   Handles page transitions, loader, and persistent layout.
+   ===================================================================== */
+
+/* -------------------------------------------------------------------
+   Page Loader
+   ------------------------------------------------------------------- */
 #spa-loader {
   position: fixed;
   inset: 0;
-  background: rgba(5, 5, 10, 0.42);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  background: rgba(5, 5, 10, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: grid;
   place-items: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.25s ease;
   z-index: 9999;
 }
 
@@ -18,27 +26,151 @@
 }
 
 #spa-loader .spinner {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.25);
-  border-top-color: rgba(255, 255, 255, 0.95);
-  animation: spa-spin 0.8s linear infinite;
-}
-
-#spa-content {
-  opacity: 1;
-  transition: opacity 0.2s ease;
-}
-
-#spa-content.is-fading-out {
-  opacity: 0;
-}
-
-#spa-content.is-fading-in {
-  opacity: 1;
+  border: 3px solid rgba(168, 85, 247, 0.2);
+  border-top-color: #a855f7;
+  animation: spa-spin 0.75s linear infinite;
 }
 
 @keyframes spa-spin {
   to { transform: rotate(360deg); }
+}
+
+/* -------------------------------------------------------------------
+   Content Transitions
+   ------------------------------------------------------------------- */
+#spa-content {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  min-height: calc(100vh - 280px);
+}
+
+#spa-content.is-fading-out {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+#spa-content.is-fading-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Page enter animation */
+.spa-page {
+  animation: spa-page-enter 0.35s ease-out;
+}
+
+@keyframes spa-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------------------------------------------------------
+   Persistent Layout
+   ------------------------------------------------------------------- */
+
+/* The body acts as the SPA shell */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Main navbar is sticky at top */
+#main-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+/* Main content area grows to fill space */
+#spa-content {
+  flex: 1 0 auto;
+}
+
+/* Main footer stays at bottom */
+#main-footer {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+/* -------------------------------------------------------------------
+   SPA Page Container
+   ------------------------------------------------------------------- */
+.spa-page {
+  width: 100%;
+}
+
+/* -------------------------------------------------------------------
+   Navigation Active States
+   ------------------------------------------------------------------- */
+.nav-links a.active {
+  color: var(--accent, #a78bfa);
+  font-weight: 600;
+}
+
+.footer a.footer-active {
+  color: var(--accent, #a78bfa);
+}
+
+/* -------------------------------------------------------------------
+   Smooth scrolling
+   ------------------------------------------------------------------- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* -------------------------------------------------------------------
+   Prevent layout shift during transitions
+   ------------------------------------------------------------------- */
+#spa-content {
+  contain: layout style;
+}
+
+/* -------------------------------------------------------------------
+   Loading Skeleton (optional enhancement)
+   ------------------------------------------------------------------- */
+.spa-loading-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 25%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.02) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* -------------------------------------------------------------------
+   Error State
+   ------------------------------------------------------------------- */
+.spa-error {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.spa-error h2 {
+  font-size: 1.75rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary, #f4f4f5);
+}
+
+.spa-error p {
+  color: var(--text-secondary, #a1a1aa);
 }

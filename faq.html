@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FAQ — IDEANAX</title>
 <link rel="stylesheet" href="faq.css">
+<link rel="stylesheet" href="spa.css">
 </head>
 <body>
+<div id="spa-loader" aria-live="polite" aria-label="Loading page" role="status"><div class="spinner"></div></div>
+<main id="spa-content">
+<!-- route:faq -->
+<div class="spa-page" data-page="faq" data-title="FAQ — IdeanaX" data-description="Frequently asked questions about IdeanaX and our services.">
 
 <!-- ===================== NAVBAR ===================== -->
 <header class="navbar">
@@ -712,6 +717,9 @@
   </div>
 </footer>
 
+</div>
+</main>
 <script src="faq.js"></script>
+<script src="js/router.js"></script>
 </body>
 </html>

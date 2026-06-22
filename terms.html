@@ -8,8 +8,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="terms.css">
+<link rel="stylesheet" href="spa.css">
 </head>
 <body>
+<div id="spa-loader" aria-live="polite" aria-label="Loading page" role="status"><div class="spinner"></div></div>
+<main id="spa-content">
+<!-- route:terms -->
+<div class="spa-page" data-page="terms" data-title="Terms of Service — IdeanaX" data-description="IdeanaX terms of service. Read the terms and conditions for using our platform.">
 
 <!-- ============ NAVBAR ============ -->
 <header class="navbar">
@@ -346,6 +351,9 @@
   </div>
 </footer>
 
+</div>
+</main>
 <script src="terms.js"></script>
+<script src="js/router.js"></script>
 </body>
 </html>
