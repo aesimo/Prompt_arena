@@ -1,0 +1,490 @@
+/* =====================================================================
+   IdeanaX — SPA Router
+   Handles client-side navigation with smooth transitions.
+   ===================================================================== */
+
+(function () {
+  'use strict';
+
+  // Route configuration mapping URLs to route names
+  const ROUTES = {
+    '/': 'home',
+    '/index.html': 'home',
+    '/prompts.html': 'prompts',
+    '/tools.html': 'tools',
+    '/assets.html': 'assets',
+    '/blog.html': 'blog',
+    '/about.html': 'about',
+    '/contact.html': 'contact',
+    '/faq.html': 'faq',
+    '/privacy.html': 'privacy',
+    '/terms.html': 'terms',
+    '/disclaimer.html': 'disclaimer'
+  };
+
+  // Page metadata for each route
+  const PAGE_META = {
+    home: { title: 'IdeanaX — Discover AI Prompts & Creator Resources', css: 'styles.css', js: 'script.js' },
+    prompts: { title: 'IdeanaX — AI Prompts Directory', css: 'prompts.css', js: 'prompts.js' },
+    tools: { title: 'IdeanaX — AI Tools Directory', css: 'tools.css', js: 'tools.js' },
+    assets: { title: 'IdeanaX — Digital Assets Marketplace', css: 'assets.css', js: 'assets.js' },
+    blog: { title: 'IdeanaX — Blog & Guides', css: 'blog.css', js: 'blog.js' },
+    about: { title: 'About Us — IdeanaX', css: 'about.css', js: 'about.js' },
+    contact: { title: 'Contact Us — IdeanaX', css: 'contact.css', js: 'contact.js' },
+    faq: { title: 'FAQ — IdeanaX', css: 'faq.css', js: 'faq.js' },
+    privacy: { title: 'Privacy Policy — IdeanaX', css: 'privacy.css', js: 'privacy.js' },
+    terms: { title: 'Terms of Service — IdeanaX', css: 'terms.css', js: 'terms.js' },
+    disclaimer: { title: 'Disclaimer — IdeanaX', css: 'disclaimer.css', js: 'disclaimer.js' }
+  };
+
+  class Router {
+    constructor() {
+      this.currentRoute = null;
+      this.currentCSS = [];
+      this.currentJS = [];
+      this.isNavigating = false;
+      this.cache = new Map();
+      this.spaContent = document.getElementById('spa-content');
+      this.loader = document.getElementById('spa-loader');
+    }
+
+    init() {
+      // Get initial route
+      const path = window.location.pathname;
+      const routeName = this.getRouteName(path);
+      this.currentRoute = routeName;
+
+      // Setup event listeners
+      this.setupLinkInterception();
+      this.setupPopState();
+
+      // Initialize current page
+      this.initializePage(routeName);
+
+      console.log('[SPA Router] Initialized on route:', routeName);
+    }
+
+    getRouteName(path) {
+      // Handle root path
+      if (path === '/' || path === '') return 'home';
+      
+      // Clean up path and lookup route
+      const cleanPath = path.replace(/^\//, '');
+      return ROUTES['/' + cleanPath] || ROUTES[path] || 'home';
+    }
+
+    getPathForRoute(routeName) {
+      // Reverse lookup
+      for (const [path, name] of Object.entries(ROUTES)) {
+        if (name === routeName) {
+          return path === '/' ? '/index.html' : path;
+        }
+      }
+      return '/index.html';
+    }
+
+    setupLinkInterception() {
+      document.addEventListener('click', (e) => {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        
+        // Skip external links, anchors, and special links
+        if (this.shouldIgnoreLink(href, link)) return;
+
+        e.preventDefault();
+        this.navigate(href);
+      });
+    }
+
+    shouldIgnoreLink(href, link) {
+      // Skip if it has a target
+      if (link.target && link.target !== '_self') return true;
+      
+      // Skip external links
+      if (href.startsWith('http') || href.startsWith('//')) return true;
+      
+      // Skip anchors and javascript
+      if (href.startsWith('#') || href.startsWith('javascript:')) return true;
+      
+      // Skip download links
+      if (link.hasAttribute('download')) return true;
+      
+      // Skip links to non-HTML files
+      if (/\.(pdf|zip|jpg|jpeg|png|gif|svg|mp4|webm)$/i.test(href)) return true;
+
+      return false;
+    }
+
+    setupPopState() {
+      window.addEventListener('popstate', (e) => {
+        const path = window.location.pathname;
+        const routeName = this.getRouteName(path);
+        
+        if (routeName !== this.currentRoute) {
+          this.loadRoute(path, false);
+        }
+      });
+    }
+
+    navigate(href) {
+      if (this.isNavigating) return;
+
+      const currentPath = window.location.pathname;
+      const targetPath = href.startsWith('/') ? href : '/' + href;
+      
+      // Don't navigate to same page
+      if (currentPath === targetPath || 
+          (currentPath === '/' && targetPath === '/index.html') ||
+          (currentPath === '/index.html' && targetPath === '/')) {
+        return;
+      }
+
+      this.loadRoute(href, true);
+    }
+
+    async loadRoute(href, pushState = true) {
+      if (this.isNavigating) return;
+      this.isNavigating = true;
+
+      const targetPath = href.startsWith('/') ? href : '/' + href;
+      const routeName = this.getRouteName(targetPath);
+
+      try {
+        this.showLoader();
+        this.startFadeOut();
+
+        // Small delay for visual transition
+        await this.delay(150);
+
+        // Check cache first
+        let pageContent;
+        if (this.cache.has(targetPath)) {
+          pageContent = this.cache.get(targetPath);
+        } else {
+          pageContent = await this.fetchPage(href);
+          // Cache the content
+          this.cache.set(targetPath, pageContent);
+        }
+
+        // Parse and extract content
+        const content = this.extractContent(pageContent);
+        
+        // Update URL
+        if (pushState) {
+          window.history.pushState({}, '', targetPath);
+        }
+
+        // Cleanup previous page
+        this.cleanupPage();
+
+        // Update DOM
+        this.updateContent(content, routeName);
+
+        // Load new assets
+        await this.loadRouteAssets(routeName);
+
+        // Update navigation states
+        this.updateActiveNav(routeName);
+
+        // Update meta tags
+        this.updateMeta(routeName);
+
+        // Initialize new page
+        this.initializePage(routeName);
+
+        // Fade in
+        this.startFadeIn();
+        await this.delay(200);
+        this.hideLoader();
+
+        // Update current route
+        this.currentRoute = routeName;
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      } catch (error) {
+        console.error('[SPA Router] Navigation failed:', error);
+        // Fall back to full page load
+        window.location.href = href;
+      } finally {
+        this.isNavigating = false;
+      }
+    }
+
+    async fetchPage(href) {
+      const url = href.startsWith('/') ? href : '/' + href;
+      const response = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${url}: ${response.status}`);
+      }
+
+      return await response.text();
+    }
+
+    extractContent(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Try to find spa-page content first
+      const spaPage = doc.querySelector('.spa-page');
+      if (spaPage) {
+        return {
+          content: spaPage.outerHTML,
+          title: doc.title,
+          meta: doc.querySelector('meta[name="description"]')?.content || ''
+        };
+      }
+
+      // Otherwise, extract navbar, body content, and footer
+      const navbar = doc.querySelector('.navbar')?.outerHTML || '';
+      const footer = doc.querySelector('.footer')?.outerHTML || '';
+      
+      // Get body content between navbar and footer
+      const body = doc.body;
+      let mainContent = '';
+      
+      // Find all direct children that aren't navbar or footer
+      const children = body.children;
+      for (let child of children) {
+        if (!child.classList.contains('navbar') && 
+            !child.classList.contains('footer') &&
+            child.tagName !== 'SCRIPT') {
+          mainContent += child.outerHTML;
+        }
+      }
+
+      return {
+        content: navbar + mainContent + footer,
+        title: doc.title,
+        meta: doc.querySelector('meta[name="description"]')?.content || ''
+      };
+    }
+
+    updateContent(content, routeName) {
+      if (!this.spaContent) {
+        console.error('[SPA Router] spa-content element not found');
+        return;
+      }
+
+      // Create spa-page wrapper for the content
+      const meta = PAGE_META[routeName] || PAGE_META.home;
+      const pageWrapper = document.createElement('div');
+      pageWrapper.className = 'spa-page';
+      pageWrapper.dataset.page = routeName;
+      pageWrapper.dataset.title = meta.title;
+      pageWrapper.innerHTML = content.content;
+
+      // Clear and update content
+      this.spaContent.innerHTML = '';
+      this.spaContent.appendChild(pageWrapper);
+    }
+
+    async loadRouteAssets(routeName) {
+      const meta = PAGE_META[routeName];
+      if (!meta) return;
+
+      // Load CSS
+      if (meta.css && meta.css !== 'styles.css') {
+        await this.loadCSS(meta.css);
+        this.currentCSS.push(meta.css);
+      }
+
+      // Load JS
+      if (meta.js) {
+        await this.loadJS(meta.js);
+        this.currentJS.push(meta.js);
+      }
+    }
+
+    loadCSS(href) {
+      return new Promise((resolve, reject) => {
+        // Check if already loaded
+        if (document.querySelector(`link[href="${href}"]`)) {
+          resolve();
+          return;
+        }
+
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.onload = resolve;
+        link.onerror = reject;
+        document.head.appendChild(link);
+      });
+    }
+
+    unloadCSS(href) {
+      const link = document.querySelector(`link[href="${href}"]`);
+      if (link) {
+        link.remove();
+      }
+    }
+
+    loadJS(src) {
+      return new Promise((resolve, reject) => {
+        // Check if already loaded
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+      });
+    }
+
+    cleanupPage() {
+      // Unload previous CSS (except styles.css which is shared)
+      this.currentCSS.forEach(css => {
+        if (css !== 'styles.css') {
+          this.unloadCSS(css);
+        }
+      });
+      this.currentCSS = [];
+
+      // Remove old scripts from body
+      this.currentJS.forEach(js => {
+        const script = document.querySelector(`script[src="${js}"]`);
+        if (script) {
+          script.remove();
+        }
+      });
+      this.currentJS = [];
+
+      // Clear any intervals or timeouts from previous page
+      // Note: Individual pages should handle their own cleanup in PageCleanups
+      if (window.PageCleanups && window.PageCleanups[this.currentRoute]) {
+        try {
+          window.PageCleanups[this.currentRoute]();
+        } catch (e) {
+          console.warn('[SPA Router] Cleanup error:', e);
+        }
+      }
+    }
+
+    initializePage(routeName) {
+      // Wait for scripts to load then initialize
+      setTimeout(() => {
+        if (window.PageInitializers && window.PageInitializers[routeName]) {
+          try {
+            window.PageInitializers[routeName]();
+            console.log('[SPA Router] Initialized page:', routeName);
+          } catch (e) {
+            console.error('[SPA Router] Page init error:', e);
+          }
+        } else {
+          // Try to find and execute inline scripts
+          this.executeInlineScripts();
+        }
+      }, 50);
+    }
+
+    executeInlineScripts() {
+      const scripts = this.spaContent.querySelectorAll('script');
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+    }
+
+    updateActiveNav(routeName) {
+      const pathMap = {
+        'home': 'index.html',
+        'prompts': 'prompts.html',
+        'tools': 'tools.html',
+        'assets': 'assets.html',
+        'blog': 'blog.html',
+        'about': 'about.html',
+        'contact': 'contact.html',
+        'faq': 'faq.html',
+        'privacy': 'privacy.html',
+        'terms': 'terms.html',
+        'disclaimer': 'disclaimer.html'
+      };
+
+      const activePath = pathMap[routeName];
+
+      // Update navbar links
+      document.querySelectorAll('.nav-links a').forEach(link => {
+        link.classList.remove('active');
+        if (activePath && link.getAttribute('href') === activePath) {
+          link.classList.add('active');
+        }
+      });
+
+      // Update footer links
+      document.querySelectorAll('.footer a').forEach(link => {
+        link.classList.remove('footer-active');
+        if (activePath && link.getAttribute('href') === activePath) {
+          link.classList.add('footer-active');
+        }
+      });
+    }
+
+    updateMeta(routeName) {
+      const meta = PAGE_META[routeName];
+      if (meta) {
+        document.title = meta.title;
+      }
+    }
+
+    showLoader() {
+      if (this.loader) {
+        this.loader.classList.add('is-visible');
+      }
+    }
+
+    hideLoader() {
+      if (this.loader) {
+        this.loader.classList.remove('is-visible');
+      }
+    }
+
+    startFadeOut() {
+      if (this.spaContent) {
+        this.spaContent.classList.add('is-fading-out');
+        this.spaContent.classList.remove('is-fading-in');
+      }
+    }
+
+    startFadeIn() {
+      if (this.spaContent) {
+        this.spaContent.classList.remove('is-fading-out');
+        this.spaContent.classList.add('is-fading-in');
+      }
+    }
+
+    delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  }
+
+  // Initialize router when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      window.spaRouter = new Router();
+      window.spaRouter.init();
+    });
+  } else {
+    window.spaRouter = new Router();
+    window.spaRouter.init();
+  }
+
+  // Expose Router class for potential extensions
+  window.SPARouter = Router;
+})();

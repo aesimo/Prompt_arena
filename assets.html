@@ -7,8 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets.css">
+<link rel="stylesheet" href="spa.css">
 </head>
 <body>
+<div id="spa-loader" aria-live="polite" aria-label="Loading page" role="status"><div class="spinner"></div></div>
+<main id="spa-content">
+<!-- route:assets -->
+<div class="spa-page" data-page="assets" data-title="IdeanaX — AI Assets Library" data-description="Premium LUTs, sound effects, overlays, and templates for creators.">
 
 <!-- NAVBAR -->
 <header class="navbar">
@@ -659,6 +664,9 @@
   </div>
 </footer>
 
+</div>
+</main>
 <script src="script.js"></script>
+<script src="js/router.js"></script>
 </body>
 </html>
