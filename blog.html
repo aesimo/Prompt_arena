@@ -7,8 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="spa.css">
 </head>
 <body>
+<div id="spa-loader" aria-live="polite" aria-label="Loading page" role="status"><div class="spinner"></div></div>
+<main id="spa-content">
+<!-- route:blog -->
+<div class="spa-page" data-page="blog" data-title="AI Blog & Guides — IdeanaX" data-description="Tips, tutorials, and guides for AI-powered content creation.">
 
 <!-- NAVBAR -->
 <header class="navbar">
@@ -544,7 +549,10 @@
   </div>
 </footer>
 
+</div>
+</main>
 <script src="script.js"></script>
 <script src="blog.js"></script>
+<script src="js/router.js"></script>
 </body>
 </html>

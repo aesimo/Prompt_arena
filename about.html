@@ -7,8 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="about.css">
+<link rel="stylesheet" href="spa.css">
 </head>
 <body>
+<div id="spa-loader" aria-live="polite" aria-label="Loading page" role="status"><div class="spinner"></div></div>
+<main id="spa-content">
+<!-- route:about -->
+<div class="spa-page" data-page="about" data-title="About Us — IdeanaX" data-description="Learn about IdeanaX, your ultimate hub for AI prompts, tools, assets and creator resources.">
 
 <!-- NAVBAR -->
 <header class="navbar">
@@ -296,6 +301,9 @@
   </div>
 </footer>
 
+</div>
+</main>
 <script src="about.js"></script>
+<script src="js/router.js"></script>
 </body>
 </html>

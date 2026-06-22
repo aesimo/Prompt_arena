@@ -8,8 +8,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="contact.css">
+<link rel="stylesheet" href="spa.css">
 </head>
 <body>
+<div id="spa-loader" aria-live="polite" aria-label="Loading page" role="status"><div class="spinner"></div></div>
+<main id="spa-content">
+<!-- route:contact -->
+<div class="spa-page" data-page="contact" data-title="Contact Us — IdeanaX" data-description="Get in touch with the IdeanaX team for support, feedback, or business inquiries.">
 
 <!-- ============ NAVBAR ============ -->
 <header class="navbar">
@@ -389,5 +394,9 @@
   </div>
 </footer>
 
+</div>
+</main>
+<script src="contact.js"></script>
+<script src="js/router.js"></script>
 </body>
 </html>
