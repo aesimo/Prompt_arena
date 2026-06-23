@@ -29,7 +29,9 @@
     '/terms': { page: 'terms', file: './terms/html/terms.html' },
     '/terms.html': { page: 'terms', file: './terms/html/terms.html' },
     '/disclaimer': { page: 'disclaimer', file: './disclaimer/html/disclaimer.html' },
-    '/disclaimer.html': { page: 'disclaimer', file: './disclaimer/html/disclaimer.html' }
+    '/disclaimer.html': { page: 'disclaimer', file: './disclaimer/html/disclaimer.html' },
+    '/image-converter': { page: 'image-converter', file: './image-converter/html/image-converter.html' },
+    '/image-converter.html': { page: 'image-converter', file: './image-converter/html/image-converter.html' }
   };
 
   const spaContent = document.getElementById('spa-content');
