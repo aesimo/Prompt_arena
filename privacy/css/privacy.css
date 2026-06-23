@@ -484,6 +484,7 @@ button {
   color: #fff;
   margin-bottom: 16px;
   box-shadow: var(--shadow-purple);
+  overflow: hidden;
 }
 
 .help-card h4 {
@@ -556,6 +557,7 @@ button {
   align-items: center;
   justify-content: center;
   color: var(--purple-400);
+  overflow: hidden;
 }
 
 .feature-item h5 {
