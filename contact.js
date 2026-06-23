@@ -1,5 +1,5 @@
 /* ===========================================================
-   IDEANAX — Contact Page JS
+   mxo.me — Contact Page JS
    =========================================================== */
 
 function initContactPage() {
@@ -57,7 +57,7 @@ function initContactPage() {
   const searchBtn = document.querySelector('.icon-btn[aria-label="Search"]');
   if (searchBtn) {
     searchBtn.addEventListener('click', () => {
-      const q = prompt('Search IDEANAX…');
+      const q = prompt('Search mxo.me…');
       if (q && q.trim()) {
         alert(`Searching for: "${q.trim()}"\n(Connect your search backend here.)`);
       }
@@ -72,11 +72,11 @@ function initContactPage() {
   const msgTextarea  = document.querySelector('.form-textarea');
 
   function showToast(message, type = 'success') {
-    const existing = document.querySelector('.ideanax-toast');
+    const existing = document.querySelector('.mxome-toast');
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
-    toast.className = 'ideanax-toast';
+    toast.className = 'mxome-toast';
     toast.setAttribute('role', 'status');
     toast.setAttribute('aria-live', 'polite');
     toast.textContent = message;
@@ -171,8 +171,8 @@ function initContactPage() {
         const style = document.createElement('style');
         style.id = 'spin-style';
         style.textContent = `
-          @keyframes ideanax-spin { to { transform: rotate(360deg); } }
-          .spin-icon { animation: ideanax-spin 0.8s linear infinite; }
+          @keyframes mxome-spin { to { transform: rotate(360deg); } }
+          .spin-icon { animation: mxome-spin 0.8s linear infinite; }
         `;
         document.head.appendChild(style);
       }

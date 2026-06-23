@@ -1,5 +1,5 @@
 /* ==========================================================================
-   IdeanaX — About Page
+   mxo.me — About Page
    Handles: animated stat counters (count up when scrolled into view),
    smooth-scroll CTA buttons.
    ========================================================================== */
