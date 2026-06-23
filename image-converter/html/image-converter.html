@@ -84,7 +84,56 @@
             </label>
             <span class="toggle-label">Remove Background</span>
           </div>
-          <p class="slider-hint">AI-powered background removal (takes a few seconds).</p>
+          <p class="slider-hint">AI-powered background removal with multiple AI models and automatic fallback.</p>
+        </div>
+
+        <!-- Background Removal Options Panel (shown when toggle is on) -->
+        <div class="settings-group bg-removal-options" id="bgRemovalOptions" style="display: none;">
+          <div class="bg-options-header">
+            <svg class="bg-options-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+            </svg>
+            <span>AI Removal Settings</span>
+          </div>
+          
+          <div class="bg-option-row">
+            <label class="bg-option-label">Processing Mode</label>
+            <div class="segmented-control" id="processingMode">
+              <button class="segment-btn active" data-mode="balanced" title="Balanced speed and quality">Balanced</button>
+              <button class="segment-btn" data-mode="quality" title="Highest quality, slower processing">Quality</button>
+              <button class="segment-btn" data-mode="fast" title="Fastest processing, lower quality">Fast</button>
+            </div>
+          </div>
+
+          <div class="bg-option-row">
+            <label class="bg-option-label">Edge Refinement</label>
+            <div class="slider-header compact">
+              <span class="slider-min-label">Sharp</span>
+              <span class="slider-max-label">Smooth</span>
+            </div>
+            <input type="range" id="edgeRefinementSlider" min="0" max="100" step="10" value="50" class="form-slider">
+          </div>
+
+          <div class="bg-option-row">
+            <label class="bg-option-label">Comparison View</label>
+            <div class="toggle-container compact">
+              <label class="toggle-switch small">
+                <input type="checkbox" id="comparisonToggle">
+                <span class="slider-round"></span>
+              </label>
+              <span class="toggle-label small">Show before/after slider</span>
+            </div>
+          </div>
+
+          <div class="bg-provider-status" id="providerStatus">
+            <span class="provider-label">AI Providers:</span>
+            <div class="provider-dots">
+              <span class="provider-dot active" title="Imgly Background Removal" data-provider="imgly">1</span>
+              <span class="provider-dot" title="Bria AI Background Removal" data-provider="bria">2</span>
+              <span class="provider-dot" title="TensorFlow BodyPix (Offline)" data-provider="bodypix">3</span>
+            </div>
+          </div>
         </div>
 
         <div class="settings-group" id="qualityGroup">
@@ -118,6 +167,43 @@
           <polyline points="21 15 16 10 5 21"/>
         </svg>
         <p>Upload an image to see details, preview, and download converted output.</p>
+      </div>
+
+      <!-- PROGRESS OVERLAY -->
+      <div class="progress-overlay" id="progressOverlay" style="display: none;">
+        <div class="progress-card">
+          <div class="progress-spinner">
+            <svg viewBox="0 0 50 50">
+              <circle cx="25" cy="25" r="20" fill="none" stroke="var(--border)" stroke-width="4"/>
+              <circle cx="25" cy="25" r="20" fill="none" stroke="var(--purple-2)" stroke-width="4" stroke-dasharray="80" stroke-dashoffset="0" class="spinner-circle"/>
+            </svg>
+          </div>
+          <h4 class="progress-title" id="progressTitle">Processing Image...</h4>
+          <div class="progress-steps" id="progressSteps">
+            <div class="progress-step active" data-step="1">
+              <span class="step-dot"></span>
+              <span class="step-label">Preprocessing</span>
+            </div>
+            <div class="progress-step" data-step="2">
+              <span class="step-dot"></span>
+              <span class="step-label">Loading AI Model</span>
+            </div>
+            <div class="progress-step" data-step="3">
+              <span class="step-dot"></span>
+              <span class="step-label">Segmenting</span>
+            </div>
+            <div class="progress-step" data-step="4">
+              <span class="step-dot"></span>
+              <span class="step-label">Refining Edges</span>
+            </div>
+            <div class="progress-step" data-step="5">
+              <span class="step-dot"></span>
+              <span class="step-label">Finalizing</span>
+            </div>
+          </div>
+          <div class="progress-details" id="progressDetails">Initializing...</div>
+          <button class="btn-secondary progress-cancel" id="progressCancel" style="display: none;">Cancel</button>
+        </div>
       </div>
 
       <!-- ACTIVE STATE -->
@@ -173,8 +259,29 @@
               </div>
             </div>
           </div>
-          <div class="preview-box">
-            <img id="newImgPreview" src="" alt="Converted Preview">
+          <div class="preview-box comparison-container" id="comparisonContainer" style="display: none;">
+            <div class="comparison-wrapper">
+              <div class="comparison-before">
+                <img id="beforeImgPreview" src="" alt="Before">
+                <span class="comparison-label">Original</span>
+              </div>
+              <div class="comparison-after">
+                <img id="newImgPreview" src="" alt="Converted Preview">
+                <span class="comparison-label">Result</span>
+              </div>
+              <div class="comparison-slider-handle" id="comparisonHandle">
+                <div class="slider-line"></div>
+                <div class="slider-button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="preview-box" id="normalPreview">
+            <img id="singleImgPreview" src="" alt="Converted Preview">
           </div>
           
           <div class="action-footer">
