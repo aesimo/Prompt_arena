@@ -1,5 +1,5 @@
 /* ==========================================================================
-   IdeanaX — Blog & Guides Page
+   mxo.me — Blog & Guides Page
    Handles: topic pill filter, blog search, post bookmarks,
    grid/list view toggle, pagination clicks.
    ========================================================================== */

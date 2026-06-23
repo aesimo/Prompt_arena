@@ -1,5 +1,5 @@
 /* ==========================================================================
-   IdeanaX — Home Page
+   mxo.me — Home Page
    Handles: chip filter, search, bookmark toggle, load more, waveform,
    theme toggle, search focus shortcut.
    ========================================================================== */
