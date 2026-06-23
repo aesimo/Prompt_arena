@@ -60,45 +60,56 @@
       edgeRefinement: 50,
       comparisonEnabled: false,
       isProcessing: false,
-      abortController: null
+      abortController: null,
+      cleanupUrls: []
     };
 
-    // Provider configurations
-    const PROVIDERS = {
-      IMGLY: {
-        name: 'Imgly',
-        url: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.0/dist/index.mjs',
-        fallbackIndex: 0
+    // Provider configurations using only providers that actually work
+    // 1. Imgly (primary) — uses @imgly/background-removal from CDN
+    // 2. Smart Edge Canvas (fallback) — edge-detection based segmentation
+    // 3. Color Key Canvas (final fallback) — color-based background removal
+    const PROVIDERS = [
+      {
+        name: 'Imgly AI',
+        url: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.0/dist/index.mjs',
+        type: 'imgly',
+        description: 'Deep learning model (online)'
       },
-      BRIA: {
-        name: 'Bria AI',
-        url: 'https://cdn.jsdelivr.net/npm/@briaai/bg-remove@1.0.0/dist/index.mjs',
-        fallbackIndex: 1
+      {
+        name: 'Smart Edge',
+        type: 'canvas-edge',
+        url: null,
+        description: 'Edge detection (offline)'
       },
-      BODYPIX: {
-        name: 'BodyPix',
-        url: null, // Will be handled differently
-        fallbackIndex: 2
+      {
+        name: 'Color Key',
+        type: 'canvas-color',
+        url: null,
+        description: 'Color sampling (offline)'
       }
-    };
+    ];
 
     /* -----------------------------------------------------------------
        Background Removal Manager
        ----------------------------------------------------------------- */
     class BackgroundRemovalManager {
       constructor() {
-        this.providers = [
-          { ...PROVIDERS.IMGLY, instance: null },
-          { ...PROVIDERS.BRIA, instance: null },
-          { ...PROVIDERS.BODYPIX, instance: null }
-        ];
-        this.currentProvider = null;
+        this.providers = PROVIDERS;
+        this.currentProviderIndex = -1;
         this.onProgress = null;
+        this.onProviderChange = null;
         this.maxImageSize = 2048;
+        this.imglyModule = null;
+        this.imglyLoading = false;
+        this.imglyLoadPromise = null;
       }
 
       setProgressCallback(callback) {
         this.onProgress = callback;
+      }
+
+      setProviderChangeCallback(callback) {
+        this.onProviderChange = callback;
       }
 
       updateProgress(step, message, details = '') {
@@ -107,106 +118,106 @@
         }
       }
 
+      updateProviderUI(index, status) {
+        if (this.onProviderChange) {
+          this.onProviderChange(index, status);
+        }
+      }
+
       async preprocessImage(imageUrl) {
         this.updateProgress(1, 'Preprocessing', 'Analyzing image dimensions...');
-        
+
         return new Promise((resolve, reject) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          
+
           img.onload = () => {
             let { naturalWidth: width, naturalHeight: height } = img;
-            
-            // Resize if image is too large
+
+            // Resize if image is too large (prevents OOM on mobile)
             if (width > this.maxImageSize || height > this.maxImageSize) {
               const ratio = Math.min(this.maxImageSize / width, this.maxImageSize / height);
               width = Math.round(width * ratio);
               height = Math.round(height * ratio);
-              
+
               this.updateProgress(1, 'Preprocessing', `Resizing image to ${width}×${height}...`);
-              
+
               const canvas = document.createElement('canvas');
               canvas.width = width;
               canvas.height = height;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
-              
+
               canvas.toBlob((blob) => {
                 resolve(URL.createObjectURL(blob));
               }, 'image/png');
             } else {
-              this.updateProgress(1, 'Preprocessing', 'Image size optimal, no resizing needed.');
+              this.updateProgress(1, 'Preprocessing', `Image size ${width}×${height} is optimal.`);
               resolve(imageUrl);
             }
           };
-          
+
           img.onerror = () => reject(new Error('Failed to load image for preprocessing'));
           img.src = imageUrl;
         });
       }
 
-      async loadProvider(provider) {
-        if (provider.instance) return provider.instance;
-        
-        if (!provider.url) {
-          // BodyPix doesn't need external loading in the same way
-          return { type: 'bodypix' };
-        }
+      async loadImglyModule() {
+        if (this.imglyModule) return this.imglyModule;
+        if (this.imglyLoading) return this.imglyLoadPromise;
 
-        try {
-          const module = await import(provider.url);
-          provider.instance = module.default || module.removeBackground || module;
-          return provider.instance;
-        } catch (error) {
-          console.warn(`Failed to load ${provider.name}:`, error);
-          throw error;
-        }
+        this.imglyLoading = true;
+        this.imglyLoadPromise = (async () => {
+          try {
+            const mod = await import(PROVIDERS[0].url);
+            // The library exports 'removeBackground' directly at module level
+            this.imglyModule = mod.removeBackground || mod.default?.removeBackground || mod;
+            return this.imglyModule;
+          } catch (err) {
+            this.imglyLoading = false;
+            this.imglyModule = null;
+            this.imglyLoadPromise = null;
+            throw err;
+          }
+        })();
+
+        const result = await this.imglyLoadPromise;
+        this.imglyLoading = false;
+        return result;
       }
 
       async removeWithImgly(imageUrl, mode) {
-        const removeBackground = await this.loadProvider(this.providers[0]);
-        
+        const removeBackground = await this.loadImglyModule();
+
         const options = {
-          progress: (key, current, total) => {
-            const percent = Math.round((current / total) * 100);
-            this.updateProgress(3, 'Segmenting', `Imgly AI: ${percent}% complete`);
+          progress: (progressInfo) => {
+            // Imgly v1.4+ progress callback receives an object: { type: string, percent: number }
+            // Some versions also pass { type, current, total }
+            let percent = 0;
+            if (typeof progressInfo === 'number') {
+              percent = Math.round(progressInfo * 100);
+            } else if (progressInfo.percent !== undefined) {
+              percent = typeof progressInfo.percent === 'number'
+                ? Math.round(progressInfo.percent * 100)
+                : Math.round(progressInfo.percent);
+            } else if (progressInfo.current !== undefined && progressInfo.total > 0) {
+              percent = Math.round((progressInfo.current / progressInfo.total) * 100);
+            }
+
+            const phase = progressInfo.type || 'processing';
+            this.updateProgress(3, 'Segmenting', `Imgly AI: ${phase} — ${percent}%`);
           },
-          device: mode === 'fast' ? 'cpu' : 'gpu',
-          model: mode === 'quality' ? 'large' : 'medium'
+          device: mode === 'fast' ? 'cpu' : (mode === 'quality' ? 'gpu' : 'gpu'),
+          model: mode === 'quality' ? 'large' : 'medium',
+          output: { format: 'image/png' }
         };
 
         return await removeBackground(imageUrl, options);
       }
 
-      async removeWithBria(imageUrl) {
-        // Bria AI implementation
-        const briaModule = await this.loadProvider(this.providers[1]);
-        
-        this.updateProgress(3, 'Segmenting', 'Bria AI: Initializing model...');
-        
-        // Fetch image as blob for Bria
-        const response = await fetch(imageUrl);
-        const imageBlob = await response.blob();
-        
-        this.updateProgress(3, 'Segmenting', 'Bria AI: Processing image...');
-        
-        // Use Bria's API
-        const result = await briaModule(imageBlob);
-        return result;
-      }
+      async removeWithCanvasEdge(imageUrl) {
+        this.updateProgress(3, 'Segmenting', 'Smart Edge: Analyzing edges...');
 
-      async removeWithBodyPix(imageUrl) {
-        this.updateProgress(2, 'Loading AI Model', 'Loading TensorFlow BodyPix (offline mode)...');
-        
-        // Dynamic import for TensorFlow.js and BodyPix
-        const [tf, bodyPix] = await Promise.all([
-          import('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.esm.js'),
-          import('https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.esm.js')
-        ]);
-
-        this.updateProgress(3, 'Segmenting', 'BodyPix: Analyzing image...');
-
-        // Load image
         const img = await new Promise((resolve, reject) => {
           const image = new Image();
           image.crossOrigin = 'anonymous';
@@ -215,207 +226,381 @@
           image.src = imageUrl;
         });
 
-        // Load BodyPix model
-        const model = await bodyPix.load({
-          architecture: 'MobileNetV1',
-          outputStride: 16,
-          multiplier: 0.75,
-          quantBytes: 2
-        });
-
-        this.updateProgress(3, 'Segmenting', 'BodyPix: Segmenting person...');
-
-        // Segment person
-        const segmentation = await model.segmentPerson(img, {
-          internalResolution: 'medium',
-          segmentationThreshold: 0.7,
-          scoreThreshold: 0.3
-        });
-
-        // Create mask canvas
         const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        canvas.width = w;
+        canvas.height = h;
         const ctx = canvas.getContext('2d');
-
-        // Draw original image
         ctx.drawImage(img, 0, 0);
 
-        // Get image data
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, w, h);
         const data = imageData.data;
-        const mask = segmentation.data;
 
-        // Apply mask
-        for (let i = 0; i < mask.length; i++) {
-          const pixelIndex = i * 4;
-          if (mask[i] === 0) {
-            data[pixelIndex + 3] = 0; // Set alpha to 0 for background
+        this.updateProgress(3, 'Segmenting', 'Smart Edge: Computing edge mask...');
+
+        // Step 1: Convert to grayscale
+        const gray = new Float32Array(w * h);
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4;
+            gray[y * w + x] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+          }
+        }
+
+        // Step 2: Compute Sobel gradient magnitude
+        const grad = new Float32Array(w * h);
+        let maxGrad = 0;
+        for (let y = 1; y < h - 1; y++) {
+          for (let x = 1; x < w - 1; x++) {
+            const idx = y * w + x;
+            const gx =
+              -gray[idx - w - 1] + gray[idx - w + 1]
+              - 2 * gray[idx - 1] + 2 * gray[idx + 1]
+              - gray[idx + w - 1] + gray[idx + w + 1];
+
+            const gy =
+              -gray[idx - w - 1] - 2 * gray[idx - w] - gray[idx - w + 1]
+              + gray[idx + w - 1] + 2 * gray[idx + w] + gray[idx + w + 1];
+
+            const magnitude = Math.sqrt(gx * gx + gy * gy);
+            grad[idx] = magnitude;
+            if (magnitude > maxGrad) maxGrad = magnitude;
+          }
+        }
+
+        this.updateProgress(3, 'Segmenting', 'Smart Edge: Segmenting subject from background...');
+
+        // Step 3: Flood-fill from center to find the subject
+        // Pixels with gradient below threshold are "fillable"
+        const edgeThreshold = maxGrad * 0.08;
+        const visited = new Uint8Array(w * h);
+        const centerX = Math.floor(w / 2);
+        const centerY = Math.floor(h / 2);
+
+        // Use iterative stack-based flood fill
+        const stack = [[centerX, centerY]];
+        const maxFill = Math.floor(w * h * 0.85);
+
+        while (stack.length > 0) {
+          const [cx, cy] = stack.pop();
+          if (cx < 1 || cx >= w - 1 || cy < 1 || cy >= h - 1) continue;
+          const idx = cy * w + cx;
+          if (visited[idx]) continue;
+          if (grad[idx] > edgeThreshold) continue;
+          visited[idx] = 1;
+
+          if (visited.reduce((a, b) => a + b, 0) > maxFill) break;
+
+          stack.push([cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]);
+        }
+
+        // Step 4: Apply mask
+        for (let i = 0; i < w * h; i++) {
+          if (!visited[i]) {
+            data[i * 4 + 3] = 0;
+          }
+        }
+
+        // Step 5: Edge feathering for smoother transitions
+        this.updateProgress(4, 'Refining Edges', 'Smart Edge: Feathering edges...');
+        for (let y = 1; y < h - 1; y++) {
+          for (let x = 1; x < w - 1; x++) {
+            const idx = (y * w + x) * 4;
+            if (data[idx + 3] === 0) continue;
+
+            let bgNeighbors = 0;
+            if (data[((y) * w + (x - 1)) * 4 + 3] === 0) bgNeighbors++;
+            if (data[((y) * w + (x + 1)) * 4 + 3] === 0) bgNeighbors++;
+            if (data[((y - 1) * w + (x)) * 4 + 3] === 0) bgNeighbors++;
+            if (data[((y + 1) * w + (x)) * 4 + 3] === 0) bgNeighbors++;
+
+            if (bgNeighbors > 0) {
+              data[idx + 3] = Math.round(data[idx + 3] * (1 - bgNeighbors * 0.2));
+            }
           }
         }
 
         ctx.putImageData(imageData, 0, 0);
 
-        // Convert to blob
+        return new Promise((resolve) => {
+          canvas.toBlob((blob) => resolve(blob), 'image/png');
+        });
+      }
+
+      async removeWithCanvasColor(imageUrl) {
+        this.updateProgress(3, 'Segmenting', 'Color Key: Sampling background colors...');
+
+        const img = await new Promise((resolve, reject) => {
+          const image = new Image();
+          image.crossOrigin = 'anonymous';
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = imageUrl;
+        });
+
+        const canvas = document.createElement('canvas');
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+
+        this.updateProgress(3, 'Segmenting', 'Color Key: Detecting dominant background...');
+
+        // Sample corners to identify background color
+        const sampleSize = Math.max(3, Math.floor(Math.min(w, h) * 0.025));
+        const cornerOffsets = [
+          { x: Math.floor(w * 0.05), y: Math.floor(h * 0.05) },
+          { x: Math.floor(w * 0.95), y: Math.floor(h * 0.05) },
+          { x: Math.floor(w * 0.05), y: Math.floor(h * 0.95) },
+          { x: Math.floor(w * 0.95), y: Math.floor(h * 0.95) },
+          { x: Math.floor(w * 0.50), y: Math.floor(h * 0.05) },  // top edge center
+          { x: Math.floor(w * 0.50), y: Math.floor(h * 0.95) },  // bottom edge center
+          { x: Math.floor(w * 0.05), y: Math.floor(h * 0.50) },  // left edge center
+          { x: Math.floor(w * 0.95), y: Math.floor(h * 0.50) }   // right edge center
+        ];
+
+        // Collect all sample pixels
+        const samples = [];
+        for (const offset of cornerOffsets) {
+          for (let dy = -sampleSize; dy <= sampleSize; dy++) {
+            for (let dx = -sampleSize; dx <= sampleSize; dx++) {
+              const sx = Math.min(w - 1, Math.max(0, offset.x + dx));
+              const sy = Math.min(h - 1, Math.max(0, offset.y + dy));
+              const idx = (sy * w + sx) * 4;
+              samples.push({ r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+            }
+          }
+        }
+
+        // Compute average background color
+        let bgR = 0, bgG = 0, bgB = 0;
+        for (const s of samples) {
+          bgR += s.r;
+          bgG += s.g;
+          bgB += s.b;
+        }
+        bgR = Math.round(bgR / samples.length);
+        bgG = Math.round(bgG / samples.length);
+        bgB = Math.round(bgB / samples.length);
+
+        // Compute color variance for adaptive threshold
+        let variance = 0;
+        for (const s of samples) {
+          variance += Math.pow(s.r - bgR, 2) + Math.pow(s.g - bgG, 2) + Math.pow(s.b - bgB, 2);
+        }
+        variance = Math.sqrt(variance / samples.length);
+
+        // Adaptive threshold: tighter for uniform backgrounds, wider for noisy ones
+        const threshold = Math.max(25, Math.min(90, variance * 1.8));
+
+        this.updateProgress(3, 'Segmenting', `Color Key: Applying threshold (${threshold.toFixed(0)})...`);
+
+        // Apply mask based on color distance from background
+        for (let i = 0; i < w * h; i++) {
+          const idx = i * 4;
+          const dr = data[idx] - bgR;
+          const dg = data[idx + 1] - bgG;
+          const db = data[idx + 2] - bgB;
+          const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+
+          if (dist < threshold) {
+            data[idx + 3] = 0;
+          }
+        }
+
+        // Edge feathering
+        this.updateProgress(4, 'Refining Edges', 'Color Key: Feathering edges...');
+        for (let y = 1; y < h - 1; y++) {
+          for (let x = 1; x < w - 1; x++) {
+            const idx = (y * w + x) * 4;
+            if (data[idx + 3] === 0) continue;
+
+            let bgNeighbors = 0;
+            if (data[((y) * w + (x - 1)) * 4 + 3] === 0) bgNeighbors++;
+            if (data[((y) * w + (x + 1)) * 4 + 3] === 0) bgNeighbors++;
+            if (data[((y - 1) * w + (x)) * 4 + 3] === 0) bgNeighbors++;
+            if (data[((y + 1) * w + (x)) * 4 + 3] === 0) bgNeighbors++;
+
+            if (bgNeighbors > 0) {
+              data[idx + 3] = Math.round(data[idx + 3] * (1 - bgNeighbors * 0.15));
+            }
+          }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+
         return new Promise((resolve) => {
           canvas.toBlob((blob) => resolve(blob), 'image/png');
         });
       }
 
       applyEdgeRefinement(canvas, refinementLevel) {
-        if (refinementLevel === 0) return canvas;
+        if (refinementLevel <= 0) return canvas;
 
         this.updateProgress(4, 'Refining Edges', `Applying edge smoothing (${refinementLevel}%)...`);
 
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
-        
-        // Get image data
+
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
-        
-        // Apply slight blur to edges based on refinement level
-        const radius = Math.max(1, Math.floor(refinementLevel / 20));
-        
-        if (radius > 1) {
-          // Simple box blur for edge areas
-          const tempData = new Uint8ClampedArray(data);
-          
-          for (let y = radius; y < height - radius; y++) {
-            for (let x = radius; x < width - radius; x++) {
-              const idx = (y * width + x) * 4;
-              
-              // Only process edge pixels (where alpha changes)
-              const isEdge = this.isEdgePixel(tempData, idx, width);
-              
-              if (isEdge && tempData[idx + 3] > 0) {
-                let r = 0, g = 0, b = 0, a = 0, count = 0;
-                
-                for (let dy = -radius; dy <= radius; dy++) {
-                  for (let dx = -radius; dx <= radius; dx++) {
-                    const nIdx = ((y + dy) * width + (x + dx)) * 4;
-                    if (tempData[nIdx + 3] > 0) {
-                      r += tempData[nIdx];
-                      g += tempData[nIdx + 1];
-                      b += tempData[nIdx + 2];
-                      a += tempData[nIdx + 3];
-                      count++;
-                    }
+
+        // Kernel radius grows with refinement level
+        const radius = Math.max(1, Math.min(5, Math.round(refinementLevel / 20)));
+        const tempData = new Uint8ClampedArray(data);
+
+        for (let y = radius; y < height - radius; y++) {
+          for (let x = radius; x < width - radius; x++) {
+            const idx = (y * width + x) * 4;
+            const centerAlpha = tempData[idx + 3];
+            if (centerAlpha === 0) continue;
+
+            // Check if this pixel is near an alpha edge
+            let isEdgePixel = false;
+            edgeCheck:
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                if (dy === 0 && dx === 0) continue;
+                const nIdx = ((y + dy) * width + (x + dx)) * 4 + 3;
+                if (nIdx >= 0 && nIdx < tempData.length) {
+                  if (Math.abs(tempData[nIdx] - centerAlpha) > 40) {
+                    isEdgePixel = true;
+                    break edgeCheck;
                   }
-                }
-                
-                if (count > 0) {
-                  data[idx] = r / count;
-                  data[idx + 1] = g / count;
-                  data[idx + 2] = b / count;
-                  data[idx + 3] = a / count;
                 }
               }
             }
+
+            if (isEdgePixel) {
+              // Weighted average of neighboring foreground pixels
+              let r = 0, g = 0, b = 0, a = 0, totalWeight = 0;
+
+              for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                  if (dy === 0 && dx === 0) {
+                    // Give center pixel full weight
+                    r += tempData[idx] * 255;
+                    g += tempData[idx + 1] * 255;
+                    b += tempData[idx + 2] * 255;
+                    a += tempData[idx + 3] * 255;
+                    totalWeight += 255;
+                    continue;
+                  }
+                  const nIdx = ((y + dy) * width + (x + dx)) * 4;
+                  if (nIdx >= 0 && nIdx + 3 < tempData.length && tempData[nIdx + 3] > 30) {
+                    const alpha = tempData[nIdx + 3];
+                    r += tempData[nIdx] * alpha;
+                    g += tempData[nIdx + 1] * alpha;
+                    b += tempData[nIdx + 2] * alpha;
+                    a += alpha * alpha / 255;
+                    totalWeight += alpha;
+                  }
+                }
+              }
+
+              if (totalWeight > 0) {
+                data[idx] = Math.round(r / totalWeight);
+                data[idx + 1] = Math.round(g / totalWeight);
+                data[idx + 2] = Math.round(b / totalWeight);
+                data[idx + 3] = Math.round(a / totalWeight * 255);
+              }
+            }
           }
-          
-          ctx.putImageData(imageData, 0, 0);
         }
 
+        ctx.putImageData(imageData, 0, 0);
         return canvas;
       }
 
-      isEdgePixel(data, idx, width) {
-        const alpha = data[idx + 3];
-        const neighbors = [
-          idx - width * 4 + 3, // top
-          idx + width * 4 + 3, // bottom
-          idx - 4 + 3,         // left
-          idx + 4 + 3          // right
-        ];
-        
-        for (const nIdx of neighbors) {
-          if (nIdx >= 0 && nIdx < data.length && Math.abs(data[nIdx] - alpha) > 50) {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      async process(imageUrl, mode = 'balanced', edgeRefinement = 50, onProviderChange = null) {
+      async process(imageUrl, mode = 'balanced', edgeRefinement = 50) {
         let processedUrl = null;
         let lastError = null;
 
         try {
-          // Step 1: Preprocess
+          // Step 1: Preprocess (resize large images)
           processedUrl = await this.preprocessImage(imageUrl);
 
-          // Step 2-4: Try providers in order
+          // Step 2-4: Try providers in order (3 providers)
           for (let i = 0; i < this.providers.length; i++) {
             const provider = this.providers[i];
-            this.currentProvider = provider;
-            
-            if (onProviderChange) {
-              onProviderChange(i);
-            }
+            this.currentProviderIndex = i;
 
-            this.updateProgress(2, 'Loading AI Model', `${provider.name}: Loading model...`);
+            this.updateProviderUI(i, 'active');
+            this.updateProgress(2, 'Loading AI Model', `${provider.name}: Starting...`);
 
             try {
               let blob;
-              
-              switch (i) {
-                case 0:
+
+              switch (provider.type) {
+                case 'imgly': {
                   blob = await this.removeWithImgly(processedUrl, mode);
                   break;
-                case 1:
-                  blob = await this.removeWithBria(processedUrl);
+                }
+                case 'canvas-edge': {
+                  this.updateProgress(2, 'Loading AI Model', `${provider.name}: Ready (no external dependencies)`);
+                  blob = await this.removeWithCanvasEdge(processedUrl);
                   break;
-                case 2:
-                  blob = await this.removeWithBodyPix(processedUrl);
+                }
+                case 'canvas-color': {
+                  this.updateProgress(2, 'Loading AI Model', `${provider.name}: Ready (no external dependencies)`);
+                  blob = await this.removeWithCanvasColor(processedUrl);
                   break;
+                }
+                default:
+                  throw new Error(`Unknown provider type: ${provider.type}`);
               }
 
-              // Step 4: Edge refinement
-              if (edgeRefinement > 0) {
-                const img = await new Promise((resolve, reject) => {
-                  const image = new Image();
-                  image.onload = () => resolve(image);
-                  image.onerror = reject;
-                  image.src = URL.createObjectURL(blob);
-                });
+              // Step 4: Apply post-process edge refinement
+              if (edgeRefinement > 0 && blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                try {
+                  const img = await new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = reject;
+                    image.src = blobUrl;
+                  });
 
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.naturalWidth;
+                  canvas.height = img.naturalHeight;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0);
 
-                this.applyEdgeRefinement(canvas, edgeRefinement);
+                  this.applyEdgeRefinement(canvas, edgeRefinement);
 
-                blob = await new Promise((resolve) => {
-                  canvas.toBlob((b) => resolve(b), 'image/png');
-                });
+                  blob = await new Promise((resolve) => {
+                    canvas.toBlob((b) => resolve(b), 'image/png');
+                  });
+                } finally {
+                  URL.revokeObjectURL(blobUrl);
+                }
               }
 
-              this.updateProgress(5, 'Finalizing', 'Background removal complete!');
-              
-              if (onProviderChange) {
-                onProviderChange(i, 'success');
-              }
+              this.updateProgress(5, 'Finalizing', `${provider.name}: Background removal complete!`);
+              this.updateProviderUI(i, 'success');
 
               return blob;
 
             } catch (error) {
-              console.warn(`${provider.name} failed:`, error);
+              console.warn(`${provider.name} failed:`, error.message || error);
               lastError = error;
-              
-              if (onProviderChange) {
-                onProviderChange(i, 'error');
-              }
-              
+              this.updateProviderUI(i, 'error');
               // Continue to next provider
-              continue;
             }
           }
 
-          throw new Error(`All background removal providers failed. Last error: ${lastError?.message}`);
+          throw new Error(
+            `All background removal methods failed for this image. ` +
+            (lastError ? `Last error: ${lastError.message}` : '')
+          );
 
         } finally {
           if (processedUrl && processedUrl !== imageUrl) {
@@ -449,11 +634,11 @@
        ----------------------------------------------------------------- */
     function updateProgressUI(progress) {
       const steps = progressSteps.querySelectorAll('.progress-step');
-      
+
       steps.forEach((step, index) => {
         const stepNum = index + 1;
         step.classList.remove('active', 'completed');
-        
+
         if (stepNum < progress.step) {
           step.classList.add('completed');
         } else if (stepNum === progress.step) {
@@ -471,8 +656,6 @@
         dot.classList.remove('active', 'success', 'error');
         if (index === providerIndex) {
           dot.classList.add(status);
-        } else if (index < providerIndex && status === 'success') {
-          dot.classList.add('success');
         }
       });
     }
@@ -485,18 +668,20 @@
     function hideProgressOverlay() {
       progressOverlay.style.display = 'none';
       state.isProcessing = false;
-      // Reset steps
+      // Reset progress steps
       const steps = progressSteps.querySelectorAll('.progress-step');
       steps.forEach((step, index) => {
         step.classList.remove('active', 'completed');
         if (index === 0) step.classList.add('active');
       });
+      progressTitle.textContent = 'Processing Image...';
+      progressDetails.textContent = 'Preparing...';
     }
 
     function updateComparisonSlider(percentage) {
       const beforeLayer = comparisonContainer.querySelector('.comparison-before');
       const handle = comparisonHandle;
-      
+
       beforeLayer.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
       handle.style.left = `${percentage}%`;
     }
@@ -504,7 +689,7 @@
     /* -----------------------------------------------------------------
        Interactive Event Handlers
        ----------------------------------------------------------------- */
-    
+
     // Toggle quality control slider visibility based on output format
     function toggleQualityGroup() {
       const format = formatSelect.value;
@@ -519,12 +704,18 @@
     removeBgToggle.addEventListener('change', () => {
       if (removeBgToggle.checked) {
         bgRemovalOptions.style.display = 'block';
+        // Reset provider status dots
+        const dots = providerStatus.querySelectorAll('.provider-dot');
+        dots.forEach((dot, index) => {
+          dot.classList.remove('success', 'error');
+          if (index === 0) dot.classList.add('active');
+        });
       } else {
         bgRemovalOptions.style.display = 'none';
         comparisonToggle.checked = false;
         updateComparisonView();
       }
-      
+
       if (state.originalImg && !state.isProcessing) {
         performConversion();
       }
@@ -536,7 +727,7 @@
         processingMode.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         state.processingMode = btn.dataset.mode;
-        
+
         if (state.originalImg && removeBgToggle.checked && !state.isProcessing) {
           performConversion();
         }
@@ -546,7 +737,7 @@
     // Edge refinement slider
     edgeRefinementSlider.addEventListener('change', () => {
       state.edgeRefinement = parseInt(edgeRefinementSlider.value);
-      
+
       if (state.originalImg && removeBgToggle.checked && !state.isProcessing) {
         performConversion();
       }
@@ -573,11 +764,17 @@
     // Comparison slider interaction
     let isDragging = false;
 
-    comparisonHandle.addEventListener('mousedown', () => isDragging = true);
-    comparisonHandle.addEventListener('touchstart', () => isDragging = true);
+    comparisonHandle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      isDragging = true;
+    });
+    comparisonHandle.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isDragging = true;
+    });
 
-    document.addEventListener('mouseup', () => isDragging = false);
-    document.addEventListener('touchend', () => isDragging = false);
+    document.addEventListener('mouseup', () => { isDragging = false; });
+    document.addEventListener('touchend', () => { isDragging = false; });
 
     document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
@@ -586,7 +783,9 @@
 
     document.addEventListener('touchmove', (e) => {
       if (!isDragging) return;
-      handleSliderMove(e.touches[0].clientX);
+      if (e.touches.length > 0) {
+        handleSliderMove(e.touches[0].clientX);
+      }
     });
 
     function handleSliderMove(clientX) {
@@ -654,10 +853,10 @@
     // Download action handler
     downloadBtn.addEventListener('click', () => {
       if (!state.convertedBlob) return;
-      
+
       const formatExtension = formatSelect.value === 'jpeg' ? 'jpg' : formatSelect.value;
       const outputName = `${cleanFileName(state.originalFile.name)}_converted.${formatExtension}`;
-      
+
       const link = document.createElement('a');
       link.href = state.convertedUrl;
       link.download = outputName;
@@ -684,7 +883,7 @@
       if (state.originalUrl) URL.revokeObjectURL(state.originalUrl);
       if (state.convertedUrl) URL.revokeObjectURL(state.convertedUrl);
       if (state.bgRemovedUrl) URL.revokeObjectURL(state.bgRemovedUrl);
-      
+
       state.originalFile = file;
       state.convertedBlob = null;
       state.convertedUrl = null;
@@ -694,7 +893,7 @@
       // Update UI metadata for original image
       origName.textContent = file.name;
       origSize.textContent = formatBytes(file.size);
-      
+
       let rawFormat = file.type.split('/')[1] || 'unknown';
       if (rawFormat === 'jpeg') rawFormat = 'jpg';
       origFormat.textContent = rawFormat;
@@ -708,10 +907,17 @@
       img.onload = function() {
         state.originalImg = img;
         origDims.textContent = `${img.naturalWidth} × ${img.naturalHeight} px`;
-        
+
         // Hide empty placeholder and show previews
         emptyState.style.display = 'none';
         previewState.style.display = 'block';
+
+        // Reset provider dots
+        const dots = providerStatus.querySelectorAll('.provider-dot');
+        dots.forEach((dot, index) => {
+          dot.classList.remove('success', 'error', 'active');
+          if (index === 0) dot.classList.add('active');
+        });
 
         // Perform first conversion
         performConversion();
@@ -728,19 +934,19 @@
       const removeBg = removeBgToggle.checked;
       let sourceImg = state.originalImg;
 
-      // Show progress overlay if background removal is needed and not cached
+      // Show progress overlay if background removal is needed and not already cached
       if (removeBg && !state.bgRemovedImg) {
         showProgressOverlay();
         bgRemovalManager.setProgressCallback(updateProgressUI);
+        bgRemovalManager.setProviderChangeCallback(updateProviderUI);
 
         try {
           const blob = await bgRemovalManager.process(
             state.originalUrl,
             state.processingMode,
-            state.edgeRefinement,
-            updateProviderUI
+            state.edgeRefinement
           );
-          
+
           state.bgRemovedUrl = URL.createObjectURL(blob);
           state.bgRemovedImg = await new Promise((resolve, reject) => {
             const img = new Image();
@@ -749,14 +955,23 @@
             img.src = state.bgRemovedUrl;
           });
 
-          updateProviderUI(0, 'success');
-
         } catch (error) {
           console.error('Background removal failed:', error);
-          alert('Background removal failed. Please try again with a different image or disable the feature.');
+
+          // Show user-friendly error alert
+          alert(
+            `Background removal could not process this image.\n\n` +
+            `${error.message || 'Unknown error'}\n\n` +
+            `Please try with a different image or disable background removal.`
+          );
+
           removeBgToggle.checked = false;
           bgRemovalOptions.style.display = 'none';
           sourceImg = state.originalImg;
+
+          // Reset provider dots
+          const dots = providerStatus.querySelectorAll('.provider-dot');
+          dots.forEach(dot => dot.classList.remove('active', 'success', 'error'));
         } finally {
           hideProgressOverlay();
         }
@@ -831,7 +1046,7 @@
         downloadBtn.disabled = false;
       }, mimeType, quality);
     }
-    
+
     // Initial UI Setup on load
     toggleQualityGroup();
   }
