@@ -15,6 +15,7 @@
     const qualitySlider     = document.getElementById('qualitySlider');
     const qualityVal        = document.getElementById('qualityVal');
     const qualityGroup      = document.getElementById('qualityGroup');
+    const removeBgToggle    = document.getElementById('removeBgToggle');
     const emptyState        = document.getElementById('emptyState');
     const previewState      = document.getElementById('previewState');
     const origName          = document.getElementById('origName');
@@ -35,9 +36,11 @@
     const state = {
       originalFile: null,
       originalImg: null, // Image element loaded in memory
+      originalUrl: null,
+      bgRemovedImg: null, // Cached background-removed image
+      bgRemovedUrl: null,
       convertedBlob: null,
-      convertedUrl: null,
-      originalUrl: null
+      convertedUrl: null
     };
 
     /* -----------------------------------------------------------------
@@ -120,6 +123,12 @@
       }
     });
 
+    removeBgToggle.addEventListener('change', () => {
+      if (state.originalImg) {
+        performConversion();
+      }
+    });
+
     // Download action handler
     downloadBtn.addEventListener('click', () => {
       if (!state.convertedBlob) return;
@@ -152,9 +161,13 @@
       // Reset previous state
       if (state.originalUrl) URL.revokeObjectURL(state.originalUrl);
       if (state.convertedUrl) URL.revokeObjectURL(state.convertedUrl);
+      if (state.bgRemovedUrl) URL.revokeObjectURL(state.bgRemovedUrl);
+      
       state.originalFile = file;
       state.convertedBlob = null;
       state.convertedUrl = null;
+      state.bgRemovedImg = null;
+      state.bgRemovedUrl = null;
 
       // Update UI metadata for original image
       origName.textContent = file.name;
@@ -187,15 +200,50 @@
       img.src = state.originalUrl;
     }
 
-    function performConversion() {
+    async function performConversion() {
       if (!state.originalImg) return;
+
+      const removeBg = removeBgToggle.checked;
+      let sourceImg = state.originalImg;
+
+      // Update status to processing if background removal is needed and not yet done
+      if (removeBg && !state.bgRemovedImg) {
+        conversionStatus.textContent = 'Removing background...';
+        conversionStatus.className = 'meta-value status-indicator processing';
+        downloadBtn.disabled = true;
+
+        try {
+          // Dynamic import of the background removal library
+          const module = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal/dist/index.mjs');
+          const removeBackground = module.default || module.removeBackground;
+          
+          const blob = await removeBackground(state.originalUrl);
+          
+          state.bgRemovedUrl = URL.createObjectURL(blob);
+          state.bgRemovedImg = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Failed to load background-removed image'));
+            img.src = state.bgRemovedUrl;
+          });
+        } catch (error) {
+          console.error('Background removal failed:', error);
+          alert('Background removal failed. Falling back to original image.');
+          removeBgToggle.checked = false;
+          sourceImg = state.originalImg;
+        }
+      }
+
+      if (removeBg && state.bgRemovedImg) {
+        sourceImg = state.bgRemovedImg;
+      }
 
       // Update status to loading
       conversionStatus.textContent = 'Converting...';
       conversionStatus.className = 'meta-value status-indicator converting';
       downloadBtn.disabled = true;
 
-      const img = state.originalImg;
+      const img = sourceImg;
       const targetFormat = formatSelect.value; // 'webp', 'png', 'jpeg'
       const mimeType = targetFormat === 'jpeg' ? 'image/jpeg' : `image/${targetFormat}`;
       const quality = parseFloat(qualitySlider.value);
@@ -212,7 +260,7 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Draw original image into Canvas
+      // Draw image into Canvas
       ctx.drawImage(img, 0, 0);
 
       // Convert to Blob asynchronously for accurate file sizes and performance

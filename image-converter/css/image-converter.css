@@ -207,6 +207,78 @@
   margin: 6px 0 0 0;
 }
 
+/* Toggle Switch Styles */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider-round {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border);
+  transition: .4s;
+  border-radius: 22px;
+}
+
+.slider-round:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider-round {
+  background-color: var(--purple-2);
+}
+
+input:focus + .slider-round {
+  box-shadow: 0 0 1px var(--purple-2);
+}
+
+input:checked + .slider-round:before {
+  transform: translateX(22px);
+}
+
+.toggle-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0 !important;
+}
+
+/* Status indicator processing state */
+.status-indicator.processing::before {
+  background: var(--yellow, #f59e0b);
+  box-shadow: 0 0 8px var(--yellow, #f59e0b);
+  animation: pulse 1s infinite alternate;
+}
+
 /* Security Lock Badge */
 .security-badge {
   display: flex;
