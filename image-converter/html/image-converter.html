@@ -33,8 +33,21 @@
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-text">
-      <h1>Offline <span class="grad-text">Image Converter</span></h1>
-      <p>Convert PNG, JPG, WebP, GIF, BMP, and SVG completely client-side. Your files never leave your device.</p>
+      <h1><span id="pageTitle">Offline Image Converter</span></h1>
+      <p id="pageDescription">Convert PNG, JPG, WebP, GIF, BMP, and SVG completely client-side. Your files never leave your device.</p>
+      
+      <div class="mode-toggle-container">
+        <div class="mode-toggle">
+          <button class="mode-btn active" data-mode="converter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 21h10a2 2 0 0 0 2-2V9.414a1 1 0 0 0-.293-.707l-5.414-5.414A1 1 0 0 0 12.586 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/><path d="M12 3v6h6"/><path d="M11 11.5l-1 1.5 1 1.5"/><path d="M14 11.5l1 1.5-1 1.5"/></svg>
+            Image Converter
+          </button>
+          <button class="mode-btn" data-mode="bg-remover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/></svg>
+            Background Remover
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -62,7 +75,7 @@
       </div>
 
       <!-- CONVERSION SETTINGS -->
-      <div class="card settings-card">
+      <div class="card settings-card" id="converterSettings">
         <h3>Conversion Settings</h3>
         
         <div class="settings-group">
@@ -76,66 +89,6 @@
           </div>
         </div>
 
-        <div class="settings-group">
-          <div class="toggle-container">
-            <label class="toggle-switch">
-              <input type="checkbox" id="removeBgToggle">
-              <span class="slider-round"></span>
-            </label>
-            <span class="toggle-label">Remove Background</span>
-          </div>
-          <p class="slider-hint">AI-powered background removal with multiple AI models and automatic fallback.</p>
-        </div>
-
-        <!-- Background Removal Options Panel (shown when toggle is on) -->
-        <div class="settings-group bg-removal-options" id="bgRemovalOptions" style="display: none;">
-          <div class="bg-options-header">
-            <svg class="bg-options-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
-            </svg>
-            <span>AI Removal Settings</span>
-          </div>
-          
-          <div class="bg-option-row">
-            <label class="bg-option-label">Processing Mode</label>
-            <div class="segmented-control" id="processingMode">
-              <button class="segment-btn active" data-mode="balanced" title="Balanced speed and quality">Balanced</button>
-              <button class="segment-btn" data-mode="quality" title="Highest quality, slower processing">Quality</button>
-              <button class="segment-btn" data-mode="fast" title="Fastest processing, lower quality">Fast</button>
-            </div>
-          </div>
-
-          <div class="bg-option-row">
-            <label class="bg-option-label">Edge Refinement</label>
-            <div class="slider-header compact">
-              <span class="slider-min-label">Sharp</span>
-              <span class="slider-max-label">Smooth</span>
-            </div>
-            <input type="range" id="edgeRefinementSlider" min="0" max="100" step="10" value="50" class="form-slider">
-          </div>
-
-          <div class="bg-option-row">
-            <label class="bg-option-label">Comparison View</label>
-            <div class="toggle-container compact">
-              <label class="toggle-switch small">
-                <input type="checkbox" id="comparisonToggle">
-                <span class="slider-round"></span>
-              </label>
-              <span class="toggle-label small">Show before/after slider</span>
-            </div>
-          </div>
-
-          <div class="bg-provider-status" id="providerStatus">
-            <span class="provider-label">AI Providers:</span>
-            <div class="provider-dots">
-              <span class="provider-dot active" title="Imgly Background Removal" data-provider="imgly">1</span>
-              <span class="provider-dot" title="Bria AI Background Removal" data-provider="bria">2</span>
-              <span class="provider-dot" title="TensorFlow BodyPix (Offline)" data-provider="bodypix">3</span>
-            </div>
-          </div>
-        </div>
-
         <div class="settings-group" id="qualityGroup">
           <div class="slider-header">
             <label for="qualitySlider">Image Quality</label>
@@ -144,6 +97,70 @@
           <input type="range" id="qualitySlider" min="0.1" max="1.0" step="0.05" value="0.85" class="form-slider">
           <p class="slider-hint">Lower quality yields smaller file sizes but lower visual fidelity.</p>
         </div>
+      </div>
+
+      <!-- BACKGROUND REMOVER SETTINGS (Hidden by default) -->
+      <div class="card settings-card" id="bgRemoverSettings" style="display: none;">
+        <h3>Background Removal</h3>
+        
+        <div class="settings-group">
+          <label>Removal Method</label>
+          <div class="method-grid">
+            <button class="method-card active" data-method="canvas-color">
+              <div class="method-icon color-icon"></div>
+              <span>Color Based</span>
+            </button>
+            <button class="method-card" data-method="canvas-edge">
+              <div class="method-icon edge-icon"></div>
+              <span>Smart Edge</span>
+            </button>
+            <button class="method-card" data-method="canvas-chroma">
+              <div class="method-icon chroma-icon"></div>
+              <span>Chroma Key</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chroma Key Color Picker (only shown for chroma) -->
+        <div class="settings-group" id="chromaOptions" style="display: none;">
+          <label for="chromaColor">Key Color</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="chromaColor" value="#00ff00" class="form-color">
+            <div class="preset-colors">
+              <button class="preset-color" style="background: #00ff00;" data-color="#00ff00" title="Green Screen"></button>
+              <button class="preset-color" style="background: #0000ff;" data-color="#0000ff" title="Blue Screen"></button>
+              <button class="preset-color" style="background: #ffffff;" data-color="#ffffff" title="White"></button>
+              <button class="preset-color" style="background: #000000;" data-color="#000000" title="Black"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="slider-header compact">
+            <label id="thresholdLabel">Tolerance / Threshold</label>
+            <span id="thresholdVal">40</span>
+          </div>
+          <input type="range" id="thresholdSlider" min="5" max="150" step="1" value="40" class="form-slider">
+        </div>
+
+        <div class="settings-group">
+          <div class="slider-header compact">
+            <label>Edge Smoothing</label>
+            <span id="edgeSmoothingVal">50%</span>
+          </div>
+          <input type="range" id="edgeRefinementSlider" min="0" max="100" step="10" value="50" class="form-slider">
+        </div>
+
+        <div class="settings-group">
+          <div class="toggle-container">
+            <label class="toggle-switch small">
+              <input type="checkbox" id="comparisonToggle">
+              <span class="slider-round"></span>
+            </label>
+            <span class="toggle-label small">Show before/after slider</span>
+          </div>
+        </div>
+      </div>
 
         <div class="security-badge">
           <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -182,19 +199,19 @@
           <div class="progress-steps" id="progressSteps">
             <div class="progress-step active" data-step="1">
               <span class="step-dot"></span>
-              <span class="step-label">Preprocessing</span>
+              <span class="step-label">Reading</span>
             </div>
             <div class="progress-step" data-step="2">
               <span class="step-dot"></span>
-              <span class="step-label">Loading AI Model</span>
+              <span class="step-label">Analyzing</span>
             </div>
             <div class="progress-step" data-step="3">
               <span class="step-dot"></span>
-              <span class="step-label">Segmenting</span>
+              <span class="step-label">Processing</span>
             </div>
             <div class="progress-step" data-step="4">
               <span class="step-dot"></span>
-              <span class="step-label">Refining Edges</span>
+              <span class="step-label">Smoothing</span>
             </div>
             <div class="progress-step" data-step="5">
               <span class="step-dot"></span>
