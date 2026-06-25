@@ -55,6 +55,33 @@
     return routes[cleanPath] || routes[path] || null;
   }
 
+  function normalizePath(href) {
+    if (!href) return href;
+    // Drop query string / hash so they don't break matching
+    let path = href.split(/[?#]/)[0];
+    // Already a known route? return as-is
+    if (routes[path] || routes[path.replace(/\/$/, '') || '/']) return href;
+
+    const map = {
+      'index.html': '/',
+      'prompts/html/prompts.html': '/prompts',
+      'tools/html/tools.html': '/tools',
+      'assets/html/assets.html': '/assets',
+      'blog/html/blog.html': '/blog',
+      'about/html/about.html': '/about',
+      'contact/html/contact.html': '/contact',
+      'faq/html/faq.html': '/faq',
+      'privacy/html/privacy.html': '/privacy',
+      'terms/html/terms.html': '/terms',
+      'disclaimer/html/disclaimer.html': '/disclaimer',
+      'image-converter/html/image-converter.html': '/image-converter',
+    };
+
+    const m = path.match(/(?:^|\/)([^/]+\/html\/[^/]+\.html|index\.html)$/);
+    if (m && map[m[1]]) return map[m[1]];
+    return href;
+  }
+
   function updateActiveNav(page) {
     document.querySelectorAll('.nav-links a').forEach(link => {
       link.classList.remove('active');
@@ -190,25 +217,30 @@
   function handleLinkClick(e) {
     const link = e.target.closest('a');
     if (!link) return;
-    
+
     const href = link.getAttribute('href');
     if (!href) return;
-    
+
     // External links
     if (href.startsWith('http') || href.startsWith('//') || href.startsWith('mailto:') || href.startsWith('tel:')) {
       return;
     }
-    
+
+    // Let modifier-key clicks open in a new tab as usual
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+
+    const normalizedHref = normalizePath(href);
+
     // Check if it's a route we handle
-    const route = getRoute(href);
+    const route = getRoute(normalizedHref);
     if (route) {
       e.preventDefault();
-      loadPage(href);
+      loadPage(normalizedHref);
     }
   }
 
   function handlePopState(e) {
-    const path = window.location.pathname;
+    const path = normalizePath(window.location.pathname);
     loadPage(path, false);
   }
 
@@ -218,12 +250,12 @@
   function init() {
     // Intercept link clicks
     document.addEventListener('click', handleLinkClick);
-    
+
     // Handle browser back/forward
     window.addEventListener('popstate', handlePopState);
-    
+
     // Store current page
-    const path = window.location.pathname;
+    const path = normalizePath(window.location.pathname);
     const route = getRoute(path);
     if (route) {
       currentPage = route.page;
