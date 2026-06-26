@@ -582,3 +582,38 @@ a:focus-visible {
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
   }; animation-duration: 0.01ms !important; }
 }
+
+/* ---- Added for unified navbar ---- */
+.nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 32px;
+}
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--purple-1), var(--purple-2));
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 10px 22px;
+  border-radius: 10px;
+  transition: filter 0.2s ease, transform 0.15s ease;
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+.nav-links a.active { color: var(--text-primary); position: relative; }
+.nav-links a.active::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -2px;
+  height: 2px;
+  background: var(--purple-500);
+}
+

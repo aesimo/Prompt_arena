@@ -1,5 +1,5 @@
 /* =====================================================================
-   IdeanaX — AI Tools Directory
+   mxo.me — AI Tools Directory
    script.js — wires up every interactive element already present in
    tools.html / tools.css: search, sort, category filters (chips +
    sidebar), availability filters, view toggle, theme toggle, bookmarks,
@@ -87,7 +87,7 @@ function initToolsPage() {
   /* ---------------------------------------------------------------
      BOOKMARKS (persisted)
   --------------------------------------------------------------- */
-  const BOOKMARK_KEY = 'ideanax_bookmarks';
+  const BOOKMARK_KEY = 'mxo.me_bookmarks';
   const bookmarks = new Set(storageGet(BOOKMARK_KEY, []));
 
   function syncBookmarkUI(card) {
@@ -116,7 +116,7 @@ function initToolsPage() {
      THEME TOGGLE (light / dark) — overrides the CSS custom
      properties defined on :root so no edits to tools.css are needed.
   --------------------------------------------------------------- */
-  const THEME_KEY = 'ideanax_theme';
+  const THEME_KEY = 'mxo.me_theme';
   const DARK_VARS = {
     '--bg': '#0a0a0f', '--bg-soft': '#0f0f17', '--surface': '#15151f',
     '--surface-2': '#1b1b27', '--border': '#2a2a38', '--border-soft': '#22222e',

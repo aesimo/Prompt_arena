@@ -1,5 +1,5 @@
 /* ===========================================================
-   IDEANAX — Contact Page JS
+   mxo.me — Contact Page JS
    =========================================================== */
 
 function initContactPage() {
@@ -43,7 +43,7 @@ function initContactPage() {
   }
 
   /* ── Active nav link ──────────────────────────────────── */
-  const navLinks = document.querySelectorAll('.nav-link');
+  const navLinks = document.querySelectorAll('.nav-links a');
   const currentPage = location.pathname.split('/').pop() || 'index.html';
 
   navLinks.forEach(link => {
@@ -58,7 +58,7 @@ function initContactPage() {
   const searchBtn = document.querySelector('.icon-btn[aria-label="Search"]');
   if (searchBtn) {
     searchBtn.addEventListener('click', () => {
-      const q = prompt('Search IDEANAX…');
+      const q = prompt('Search mxo.me…');
       if (q && q.trim()) {
         alert(`Searching for: "${q.trim()}"\n(Connect your search backend here.)`);
       }
@@ -73,11 +73,11 @@ function initContactPage() {
   const msgTextarea  = document.querySelector('.form-textarea');
 
   function showToast(message, type = 'success') {
-    const existing = document.querySelector('.ideanax-toast');
+    const existing = document.querySelector('.mxo-me-toast');
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
-    toast.className = 'ideanax-toast';
+    toast.className = 'mxo-me-toast';
     toast.setAttribute('role', 'status');
     toast.setAttribute('aria-live', 'polite');
     toast.textContent = message;
@@ -172,8 +172,8 @@ function initContactPage() {
         const style = document.createElement('style');
         style.id = 'spin-style';
         style.textContent = `
-          @keyframes ideanax-spin { to { transform: rotate(360deg); } }
-          .spin-icon { animation: ideanax-spin 0.8s linear infinite; }
+          @keyframes mxo-me-spin { to { transform: rotate(360deg); } }
+          .spin-icon { animation: mxo-me-spin 0.8s linear infinite; }
         `;
         document.head.appendChild(style);
       }
@@ -199,7 +199,7 @@ function initContactPage() {
   }
 
   /* ── Sign In button ───────────────────────────────────── */
-  const signinBtn = document.querySelector('.btn-signin');
+  const signinBtn = document.querySelector('.btn-primary');
   if (signinBtn) {
     signinBtn.addEventListener('click', () => {
       showToast('Sign in coming soon!', 'success');
