@@ -8,10 +8,10 @@
   --text: #f4f4f8;
   --text-dim: #9b9bab;
   --text-faint: #6c6c80;
-  --purple: #8b5cf6;
-  --purple-2: #a855f7;
-  --purple-dark: #6d28d9;
-  --grad: linear-gradient(135deg, #a855f7, #6d28d9);
+  --accent: #ffffff;
+  --accent: #e5e5e5;
+  --accent-dark: #a1a1aa;
+  --grad: linear-gradient(135deg, #e5e5e5, #a1a1aa);
   --radius-lg: 16px;
   --radius-md: 10px;
   --radius-sm: 7px;
@@ -52,7 +52,6 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .logo { font-weight: 800; font-size: 19px; letter-spacing: 0.5px; }
-.logo-x { color: var(--purple-2); }
 
 .nav-links {
   display: flex;
@@ -69,7 +68,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   position: absolute;
   left: 0; right: 0; bottom: -19px;
   height: 2px;
-  background: var(--purple-2);
+  background: var(--accent);
 }
 
 .nav-actions { display: flex; align-items: center; gap: 10px; }
@@ -96,10 +95,10 @@ ul { list-style: none; margin: 0; padding: 0; }
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 14px;
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+  box-shadow: 0 4px 16px rgba(255,255,255,0.12);
   transition: transform 0.15s, box-shadow 0.15s;
 }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,255,255,0.18); }
 
 /* ---------- HERO ---------- */
 .hero {
@@ -244,7 +243,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   font-weight: 500;
   transition: border-color 0.15s, color 0.15s;
 }
-.chip:hover { color: var(--text); border-color: var(--purple-2); }
+.chip:hover { color: var(--text); border-color: var(--accent); }
 .chip-active { background: var(--grad); color: #fff; border-color: transparent; }
 .chip-active:hover { color: #fff; }
 .chip-more { display: flex; align-items: center; gap: 6px; }
@@ -312,7 +311,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid var(--purple-2);
+  border: 2px solid var(--accent);
   flex-shrink: 0;
   position: relative;
 }
@@ -321,7 +320,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   content: "";
   position: absolute;
   inset: 2px;
-  background: var(--purple-2);
+  background: var(--accent);
   border-radius: 50%;
 }
 
@@ -334,7 +333,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   position: relative;
   transition: background 0.12s, border-color 0.12s;
 }
-.checkbox-checked { background: var(--purple-2); border-color: var(--purple-2); }
+.checkbox-checked { background: var(--accent); border-color: var(--accent); }
 .checkbox-checked::after {
   content: "";
   position: absolute;
@@ -360,7 +359,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 .show-more-link {
   background: transparent;
   border: none;
-  color: var(--purple-2);
+  color: var(--accent);
   font-size: 13px;
   font-weight: 600;
   padding: 0;
@@ -384,7 +383,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   gap: 8px;
   transition: border-color 0.15s, color 0.15s;
 }
-.clear-filters:hover { border-color: var(--purple-2); color: var(--text); }
+.clear-filters:hover { border-color: var(--accent); color: var(--text); }
 
 /* ---------- ASSET SECTIONS ---------- */
 .asset-sections { display: flex; flex-direction: column; gap: 36px; padding-bottom: 16px; }
@@ -398,7 +397,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 
 .row-header h2 { font-size: 19px; font-weight: 700; margin: 0; }
 
-.view-all { color: var(--purple-2); font-size: 13.5px; font-weight: 600; }
+.view-all { color: var(--accent); font-size: 13.5px; font-weight: 600; }
 .view-all:hover { text-decoration: underline; }
 
 .card-grid { display: grid; gap: 18px; }
@@ -422,7 +421,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 .card:hover {
   transform: translateY(-4px);
-  border-color: rgba(168, 85, 247, 0.4);
+  border-color: rgba(255,255,255,0.10);
   box-shadow: 0 12px 28px rgba(0,0,0,0.4);
 }
 .card.is-hidden { display: none; }
@@ -443,7 +442,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 .card:hover .card-media img { transform: scale(1.06); }
 
-.dark-media { background: #0d0d12; }
+.dark-media { background: #0a0a0f; }
 
 .play-overlay {
   position: absolute;
@@ -468,13 +467,13 @@ ul { list-style: none; margin: 0; padding: 0; }
   border-radius: 999px;
   color: #fff;
 }
-.badge-lut { background: linear-gradient(135deg, #14b8a6, #0d9488); }
-.badge-preset { background: linear-gradient(135deg, #a855f7, #7e22ce); }
+.badge-lut { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
+.badge-preset { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
 .badge-overlay { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); }
 .badge-4k { background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.25); }
-.badge-thumbnail { background: linear-gradient(135deg, #a855f7, #6d28d9); }
-.badge-social { background: linear-gradient(135deg, #ec4899, #db2777); }
-.badge-video { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.badge-thumbnail { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
+.badge-social { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
+.badge-video { background: linear-gradient(135deg, #e5e5e5, #2563eb); }
 
 .dl-icon-btn {
   position: absolute;
@@ -494,10 +493,10 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .gradient-media { display: flex; align-items: center; justify-content: center; position: relative; }
-.grad-1 { background: linear-gradient(135deg, #1e1b4b, #f97316 130%); }
-.grad-2 { background: linear-gradient(135deg, #0f172a, #3b82f6 130%); }
-.grad-3 { background: linear-gradient(135deg, #1e1b4b, #312e81 60%, #7c3aed); }
-.grad-4 { background: linear-gradient(135deg, #4c1d95, #db2777 130%); }
+.grad-1 { background: linear-gradient(135deg, #171717, #e5e5e5 130%); }
+.grad-2 { background: linear-gradient(135deg, #171717, #e5e5e5 130%); }
+.grad-3 { background: linear-gradient(135deg, #171717, #525252 60%, #a1a1aa); }
+.grad-4 { background: linear-gradient(135deg, #171717, #a1a1aa 130%); }
 
 .transition-icon {
   width: 46px;
@@ -554,8 +553,8 @@ ul { list-style: none; margin: 0; padding: 0; }
   border-radius: 50%;
   transition: color 0.15s, background 0.15s;
 }
-.bookmark-flat:hover { color: var(--purple-2); background: var(--surface-2); }
-.bookmark-flat.saved { color: var(--purple-2); }
+.bookmark-flat:hover { color: var(--accent); background: var(--surface-2); }
+.bookmark-flat.saved { color: var(--accent); }
 
 /* ---------- AUDIO / WAVEFORM CARDS ---------- */
 .wave-media {
@@ -566,7 +565,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   justify-content: center;
   position: relative;
 }
-.wave-purple { background: linear-gradient(160deg, #2e1065, #4c1d95); }
+.wave-purple { background: linear-gradient(160deg, #525252, #171717); }
 .wave-cyan { background: linear-gradient(160deg, #042f2e, #115e59); }
 .wave-orange { background: linear-gradient(160deg, #431407, #7c2d12); }
 .wave-green { background: linear-gradient(160deg, #052e16, #14532d); }
@@ -627,7 +626,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   border-radius: 999px;
   font-size: 14.5px;
   font-weight: 600;
-  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 6px 20px rgba(255,255,255,0.10);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .load-more-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4); }
@@ -698,7 +697,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   font-size: 13px;
   color: var(--text-dim);
 }
-.footer-social a:hover { color: #fff; border-color: var(--purple-2); }
+.footer-social a:hover { color: #fff; border-color: var(--accent); }
 
 .footer-col h4 {
   font-size: 13px;
@@ -710,8 +709,8 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .footer-col a { display: block; color: var(--text-faint); font-size: 13.5px; margin-bottom: 11px; }
-.footer-col a:hover { color: var(--purple-2); }
-.footer-active { color: var(--purple-2); }
+.footer-col a:hover { color: var(--accent); }
+.footer-active { color: var(--accent); }
 
 .footer-bottom {
   text-align: center;

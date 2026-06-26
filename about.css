@@ -1,5 +1,5 @@
 /* ==========================================================================
-   IDEANAX — About Page Stylesheet
+   MXO.ME — About Page Stylesheet
    Fully standalone — does not require or share rules with the Home/Blog
    page stylesheets. Safe to use on its own with about.html.
    ========================================================================== */
@@ -14,11 +14,11 @@
   --text: #f4f4f8;
   --text-dim: #9b9bab;
   --text-faint: #6c6c80;
-  --purple: #8b5cf6;
-  --purple-2: #a855f7;
-  --purple-dark: #6d28d9;
-  --teal: #14b8a6;
-  --grad: linear-gradient(135deg, #a855f7, #6d28d9);
+  --accent: #ffffff;
+  --accent: #e5e5e5;
+  --accent-dark: #a1a1aa;
+  --accent-secondary: #e5e5e5;
+  --grad: linear-gradient(135deg, #e5e5e5, #a1a1aa);
   --radius-lg: 16px;
   --radius-md: 10px;
   --radius-sm: 7px;
@@ -65,7 +65,6 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .logo { font-weight: 800; font-size: 19px; letter-spacing: 0.5px; }
-.logo-x { color: var(--purple-2); }
 
 .nav-links {
   display: flex;
@@ -81,7 +80,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   position: absolute;
   left: 0; right: 0; bottom: -19px;
   height: 2px;
-  background: var(--purple-2);
+  background: var(--accent);
 }
 
 .nav-actions { display: flex; align-items: center; gap: 10px; }
@@ -108,10 +107,10 @@ ul { list-style: none; margin: 0; padding: 0; }
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 14px;
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+  box-shadow: 0 4px 16px rgba(255,255,255,0.12);
   transition: transform 0.15s, box-shadow 0.15s;
 }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,255,255,0.18); }
 
 .grad-text {
   background: var(--grad);
@@ -132,10 +131,10 @@ ul { list-style: none; margin: 0; padding: 0; }
   border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 14.5px;
-  box-shadow: 0 8px 22px rgba(139, 92, 246, 0.35);
+  box-shadow: 0 8px 22px rgba(255,255,255,0.12);
   transition: transform 0.15s, box-shadow 0.15s;
 }
-.btn-lg-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(139, 92, 246, 0.45); }
+.btn-lg-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(255,255,255,0.18); }
 
 .btn-lg-outline {
   display: inline-flex;
@@ -150,7 +149,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   font-size: 14.5px;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
-.btn-lg-outline:hover { border-color: var(--purple-2); background: var(--surface); }
+.btn-lg-outline:hover { border-color: var(--accent); background: var(--surface); }
 
 /* ---------- About Hero ---------- */
 .about-hero {
@@ -172,7 +171,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 
 .eyebrow {
   display: inline-block;
-  color: var(--purple-2);
+  color: var(--accent);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -239,7 +238,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   height: 32px;
   border-radius: 8px;
   background: rgba(139, 92, 246, 0.14);
-  color: var(--purple-2);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,7 +248,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 .stat-card .stat-num {
   font-size: 22px;
   font-weight: 800;
-  color: var(--purple-2);
+  color: var(--accent);
   letter-spacing: -0.5px;
   line-height: 1;
 }
@@ -301,11 +300,11 @@ ul { list-style: none; margin: 0; padding: 0; }
 .why-card h5 { font-size: 13px; font-weight: 700; margin: 0 0 6px; }
 .why-card p { font-size: 11.5px; color: var(--text-faint); line-height: 1.55; margin: 0; }
 
-.icon-purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
-.icon-green  { background: linear-gradient(135deg, #22c55e, #16a34a); }
-.icon-blue   { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.icon-pink   { background: linear-gradient(135deg, #ec4899, #be185d); }
-.icon-orange { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.icon-purple { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
+.icon-green  { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
+.icon-blue   { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
+.icon-pink   { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
+.icon-orange { background: linear-gradient(135deg, #e5e5e5, #a1a1aa); }
 
 /* ---------- Mission Section ---------- */
 .mission-section {
@@ -412,7 +411,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .team-info h5 { font-size: 14px; font-weight: 700; margin: 0 0 2px; }
-.team-role { display: block; color: var(--purple-2); font-size: 11.5px; font-weight: 600; margin-bottom: 7px; }
+.team-role { display: block; color: var(--accent); font-size: 11.5px; font-weight: 600; margin-bottom: 7px; }
 .team-info p { font-size: 11.5px; color: var(--text-faint); line-height: 1.55; margin: 0 0 10px; }
 
 .team-social { display: flex; gap: 6px; }
@@ -429,7 +428,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   font-size: 11px;
   transition: color 0.15s, border-color 0.15s;
 }
-.team-social a:hover { color: var(--purple-2); border-color: var(--purple-2); }
+.team-social a:hover { color: var(--accent); border-color: var(--accent); }
 
 /* ---------- CTA Banner ---------- */
 .cta-banner-wrap { max-width: 1280px; margin: 60px auto 0; padding: 0 32px; }
@@ -438,7 +437,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   background:
     radial-gradient(ellipse 600px 200px at 90% 50%, rgba(139, 92, 246, 0.18), transparent 70%),
     var(--surface);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  border: 1px solid rgba(255,255,255,0.10);
   border-radius: var(--radius-lg);
   padding: 30px 40px;
   display: flex;
@@ -490,7 +489,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   color: var(--text-dim);
   transition: color 0.15s, border-color 0.15s;
 }
-.footer-social a:hover { color: #fff; border-color: var(--purple-2); }
+.footer-social a:hover { color: #fff; border-color: var(--accent); }
 
 .footer-col h4 {
   font-size: 13px;
@@ -501,8 +500,8 @@ ul { list-style: none; margin: 0; padding: 0; }
   margin: 0 0 14px;
 }
 .footer-col a { display: block; color: var(--text-faint); font-size: 13.5px; margin-bottom: 11px; }
-.footer-col a:hover { color: var(--purple-2); }
-.footer-active { color: var(--purple-2) !important; }
+.footer-col a:hover { color: var(--accent); }
+.footer-active { color: var(--accent) !important; }
 
 .footer-bottom {
   text-align: center;

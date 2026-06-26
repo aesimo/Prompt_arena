@@ -1,5 +1,5 @@
 /* ===========================================================
-   IDEANAX — Contact Page JS
+   MXO.ME — Contact Page JS
    =========================================================== */
 
 function initContactPage() {
@@ -57,7 +57,7 @@ function initContactPage() {
   const searchBtn = document.querySelector('.icon-btn[aria-label="Search"]');
   if (searchBtn) {
     searchBtn.addEventListener('click', () => {
-      const q = prompt('Search IDEANAX…');
+      const q = prompt('Search MXO.ME…');
       if (q && q.trim()) {
         alert(`Searching for: "${q.trim()}"\n(Connect your search backend here.)`);
       }
@@ -72,11 +72,11 @@ function initContactPage() {
   const msgTextarea  = document.querySelector('.form-textarea');
 
   function showToast(message, type = 'success') {
-    const existing = document.querySelector('.ideanax-toast');
+    const existing = document.querySelector('.mxo-toast');
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
-    toast.className = 'ideanax-toast';
+    toast.className = 'mxo-toast';
     toast.setAttribute('role', 'status');
     toast.setAttribute('aria-live', 'polite');
     toast.textContent = message;
@@ -86,7 +86,7 @@ function initContactPage() {
       bottom: '28px',
       right: '28px',
       zIndex: '9999',
-      background: type === 'success' ? 'var(--purple-600)' : '#c0392b',
+      background: type === 'success' ? 'var(--accent-600)' : '#c0392b',
       color: '#fff',
       fontSize: '0.9rem',
       fontWeight: '600',
@@ -123,7 +123,7 @@ function initContactPage() {
   function setFieldError(field, hasError) {
     if (!field) return;
     if (hasError) {
-      field.style.borderColor = '#e74c3c';
+      field.style.borderColor = '#a1a1aa';
       field.style.boxShadow   = '0 0 0 3px rgba(231,76,60,0.15)';
     } else {
       field.style.borderColor = '';
@@ -171,8 +171,8 @@ function initContactPage() {
         const style = document.createElement('style');
         style.id = 'spin-style';
         style.textContent = `
-          @keyframes ideanax-spin { to { transform: rotate(360deg); } }
-          .spin-icon { animation: ideanax-spin 0.8s linear infinite; }
+          @keyframes mxo-spin { to { transform: rotate(360deg); } }
+          .spin-icon { animation: mxo-spin 0.8s linear infinite; }
         `;
         document.head.appendChild(style);
       }

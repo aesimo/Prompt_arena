@@ -1,5 +1,5 @@
 // ===========================================================
-// IDEANAX — Disclaimer Page
+// MXO.ME — Disclaimer Page
 // Standalone JS. No shared/external script dependencies.
 // ===========================================================
 

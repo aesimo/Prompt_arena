@@ -1,5 +1,5 @@
 // ===========================================================
-// IDEANAX — Terms and Conditions Page
+// MXO.ME — Terms and Conditions Page
 // Standalone JS. No shared/external script dependencies.
 // ===========================================================
 

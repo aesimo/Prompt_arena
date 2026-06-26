@@ -1,5 +1,5 @@
 /* ===========================================================
-   IDEANAX — Disclaimer Page
+   MXO.ME — Disclaimer Page
    Standalone stylesheet. No shared/external CSS dependencies.
    =========================================================== */
 
@@ -13,14 +13,14 @@
   --border-subtle: #232330;
   --border-card: #26262f;
 
-  /* Purple accent system */
-  --purple-50: #f5f3ff;
-  --purple-300: #c4b5fd;
-  --purple-400: #a78bfa;
-  --purple-500: #8b5cf6;
-  --purple-600: #7c3aed;
-  --purple-700: #6d28d9;
-  --purple-glow: rgba(139, 92, 246, 0.35);
+  /* accent accent system  */
+  --accent-50: #f5f5f5;
+  --accent-300: #d4d4d8;
+  --accent-400: #e5e5e5;
+  --accent-500: #ffffff;
+  --accent-600: #a1a1aa;
+  --accent-700: #a1a1aa;
+  --accent-glow: rgba(255,255,255,0.12);
 
   /* Text */
   --text-primary: #f5f5f7;
@@ -39,7 +39,7 @@
 
   /* Shadows */
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
-  --shadow-purple: 0 8px 30px rgba(139, 92, 246, 0.25);
+  --shadow-accent: 0 8px 30px rgba(139, 92, 246, 0.25);
 }
 
 * {
@@ -83,7 +83,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--purple-400);
+  outline: 2px solid var(--accent-400);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -118,8 +118,7 @@ button {
   color: var(--text-primary);
 }
 
-.logo-x {
-  color: var(--purple-500);
+  color: var(--accent-500);
 }
 
 .nav-links {
@@ -152,7 +151,7 @@ button {
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--purple-500);
+  background: var(--accent-500);
   border-radius: 2px;
 }
 
@@ -177,11 +176,11 @@ button {
 
 .icon-btn:hover {
   color: var(--text-primary);
-  border-color: var(--purple-500);
+  border-color: var(--accent-500);
 }
 
 .btn-signin {
-  background: var(--purple-600);
+  background: var(--accent-600);
   color: #fff;
   font-size: 0.9rem;
   font-weight: 600;
@@ -191,7 +190,7 @@ button {
 }
 
 .btn-signin:hover {
-  background: var(--purple-700);
+  background: var(--accent-700);
   transform: translateY(-1px);
 }
 
@@ -227,7 +226,7 @@ button {
 }
 
 .title-gradient {
-  background: linear-gradient(135deg, var(--purple-400), var(--purple-600));
+  background: linear-gradient(135deg, var(--accent-400), var(--accent-600));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -249,7 +248,7 @@ button {
 }
 
 .hero-meta svg {
-  color: var(--purple-500);
+  color: var(--accent-500);
   flex-shrink: 0;
 }
 
@@ -264,7 +263,7 @@ button {
 .hero-icon-img {
   width: 100%;
   max-width: 320px;
-  filter: drop-shadow(0 16px 40px rgba(139, 92, 246, 0.35));
+  filter: drop-shadow(0 16px 40px rgba(255,255,255,0.12));
 }
 
 /* ===========================================================
@@ -312,7 +311,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--purple-600), var(--purple-700));
+  background: linear-gradient(135deg, var(--accent-600), var(--accent-700));
   color: #fff;
   box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
 }
@@ -352,11 +351,11 @@ button {
 
 .contact-pill:hover {
   color: var(--text-primary);
-  border-color: var(--purple-500);
+  border-color: var(--accent-500);
 }
 
 .contact-pill svg {
-  color: var(--purple-400);
+  color: var(--accent-400);
   flex-shrink: 0;
 }
 
@@ -405,7 +404,7 @@ button {
 }
 
 .toc-link.active {
-  color: var(--purple-400);
+  color: var(--accent-400);
   font-weight: 600;
 }
 
@@ -414,13 +413,13 @@ button {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  border: 2px solid var(--purple-500);
+  border: 2px solid var(--accent-500);
   background: transparent;
   transition: background 0.2s ease;
 }
 
 .toc-link.active .toc-dot {
-  background: var(--purple-500);
+  background: var(--accent-500);
 }
 
 .help-card {
@@ -431,19 +430,19 @@ button {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--purple-500), var(--purple-700));
+  background: linear-gradient(135deg, var(--accent-500), var(--accent-700));
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   margin-bottom: 16px;
-  box-shadow: var(--shadow-purple);
+  box-shadow: var(--shadow-accent);
 }
 
 .help-card h4 {
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--purple-400);
+  color: var(--accent-400);
   margin-bottom: 8px;
 }
 
@@ -459,7 +458,7 @@ button {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  background: var(--purple-600);
+  background: var(--accent-600);
   color: #fff;
   font-size: 0.92rem;
   font-weight: 600;
@@ -469,7 +468,7 @@ button {
 }
 
 .btn-contact:hover {
-  background: var(--purple-700);
+  background: var(--accent-700);
   transform: translateY(-1px);
 }
 
@@ -509,7 +508,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--purple-400);
+  color: var(--accent-400);
 }
 
 .feature-item h5 {
@@ -575,8 +574,8 @@ button {
 
 .footer-social a:hover {
   color: #fff;
-  border-color: var(--purple-500);
-  background: var(--purple-600);
+  border-color: var(--accent-500);
+  background: var(--accent-600);
 }
 
 .footer-col h5 {
@@ -599,7 +598,7 @@ button {
 }
 
 .footer-active {
-  color: var(--purple-400) !important;
+  color: var(--accent-400) !important;
 }
 
 .footer-bottom {
