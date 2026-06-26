@@ -44,11 +44,12 @@ function initContactPage() {
 
   /* ── Active nav link ──────────────────────────────────── */
   const navLinks = document.querySelectorAll('.nav-link');
-  const currentPage = location.pathname.split('/').pop() || 'home.html';
+  const currentPage = location.pathname.split('/').pop() || 'index.html';
 
   navLinks.forEach(link => {
     const href = link.getAttribute('href') || '';
-    if (href === currentPage || (currentPage === '' && href === 'home.html')) {
+    const linkPage = href.split('/').pop() || '';
+    if (linkPage === currentPage || (currentPage === '' && linkPage === 'index.html')) {
       link.classList.add('active');
     }
   });
