@@ -729,3 +729,14 @@ ul { list-style: none; margin: 0; padding: 0; }
   .hero-icon { animation: none; }
   .card, .card-media img, .btn-primary { transition: none; }
 }
+
+/* ---------- TEMPORARILY HIDE SIDEBAR ---------- */
+/* Remove this block to reactivate the left sidebar */
+
+.sidebar {
+  display: none;
+}
+
+.main-layout {
+  grid-template-columns: 1fr;
+}
