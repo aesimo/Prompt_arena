@@ -13,7 +13,10 @@
 <!-- NAVBAR -->
 <header class="navbar">
   <div class="nav-inner">
-    <div class="logo">mxo.me</div>
+    <div class="logo logo-animated">
+      <img src="../../Eeb-logo/mxo-logo.webp" alt="mxo.me" class="logo-static">
+      <video src="../../Eeb-logo/mxo-logo-animation.mp4" muted loop playsinline preload="auto" class="logo-video"></video>
+    </div>
     <nav class="nav-links">
       <a href="../../index.html">Home</a>
       <a href="../../prompts/html/prompts.html">Prompts</a>
@@ -300,5 +303,16 @@
 </footer>
 
 <script src="../js/about.js"></script>
+<script>
+(function () {
+  var logo = document.querySelector('.navbar .logo-animated');
+  if (!logo) return;
+  var video = logo.querySelector('video');
+  setTimeout(function () {
+    logo.classList.add('is-playing');
+    if (video) video.play().catch(function () {});
+  }, 3000);
+})();
+</script>
 </body>
 </html>
